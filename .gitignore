@@ -11,3 +11,6 @@ docker/mongo-data
 # OS
 .DS_Store
 Thumbs.db
+.idea/
+*.iml
+README.md
