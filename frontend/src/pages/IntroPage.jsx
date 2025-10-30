@@ -127,7 +127,7 @@ function IntroPage() {
                     </div>
                 </section>
                 {/*Main2*/}
-                <section className="h-screen py-12 text-center flex flex-col justify-center scroll-snap-align-start ">
+                <section className=" py-12 text-center flex flex-col justify-center scroll-snap-align-start ">
                     <AnimatedScroll>
                         <div className="text-center mb-12">
                             <h2 className="text-3xl font-bold text-gray-800">
@@ -168,7 +168,7 @@ function IntroPage() {
                     </AnimatedScroll>
                 </section>
                 {/*Main3*/}
-                <section className="h-screen bg-white flex flex-col justify-center items-center py-16 scroll-snap-align-start">
+                <section className=" bg-white flex flex-col justify-center items-center py-16 scroll-snap-align-start">
                     <AnimatedScroll className="w-full flex flex-col items-center">
                         <div className="text-center mb-12">
                             <h2 className="text-3xl font-bold text-gray-800">
@@ -224,7 +224,7 @@ function IntroPage() {
                     </AnimatedScroll>
                 </section>
                 {/*Main4*/}
-                <section className="h-screen bg-white flex flex-col justify-center items-center py-16 scroll-snap-align-start">
+                <section className=" bg-white flex flex-col justify-center items-center py-16 scroll-snap-align-start">
                     <AnimatedScroll className="w-full flex flex-col items-center">
                         <div className="text-center mb-12">
                             <h2 className="text-3xl font-bold text-gray-800">
