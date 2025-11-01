@@ -106,19 +106,19 @@ function IntroPage() {
             </nav>
             <main ref={scrollContainerRef} className="flex-1 overflow-y-auto scroll-snap-type-y scroll-snap-mandatory">
                 {/*Main1*/}
-                <section className="h-screen bg-green-50 flex flex-col md:flex-row items-center justify-evenly px-6 md:px-10 py-16 scroll-snap-align-start">
-                    <div className="max-w-3xl flex flex-col items-center text-center">
-                        <h2 className="text-5xl md:text-7xl font-bold text-green-800 mb-4">
-                            VOLUNTEER <span className="text-gray-600">HUB</span>
+                <section className="h-screen bg-gradient-to-r from-green-600 to-green-200 flex flex-col md:flex-row items-center justify-evenly px-6 md:px-10 py-16 scroll-snap-align-start">
+                    <div className="max-w-3xl flex flex-col items-start text-justify">
+                        <h2 className="text-5xl md:text-7xl roboto-bold mb-10 text-green-50">
+                            VOLUNTEER HUB
                         </h2>
-                        <p className="text-lg md:text-xl text-gray-700 mb-6">
-                            Nền tảng giúp tình nguyện viên tìm kiếm, tham gia và chia sẻ những hoạt động ý nghĩa nhất tới cộng đồng.
+                        <p className="text-lg md:text-xl font-semibold text-gray-800 mb-6">
+                            Một hệ sinh thái dành riêng cho tình nguyện viên, là nơi bạn có thể dễ dàng tìm kiếm các hoạt động tình nguyện từ các tổ chức uy tín, nhanh chóng đăng ký tham gia các dự án tâm huyết, đồng thời chia sẻ những khoảnh khắc và thành tựu ý nghĩa nhất của mình để lan tỏa năng lượng tích cực trong cộng đồng
                         </p>
-                        <button className="bg-green-600 text-white text-xl px-6 py-2 rounded-md hover:bg-green-700 transition">
+                        <button className="bg-green-800 text-white text-xl px-6 py-2 rounded-md hover:bg-green-700 transition mt-20">
                             Khám phá sự kiện
                         </button>
                     </div>
-                    <div className="w-72 mt-8 md:mt-0 bg-white border border-gray-300 p-2 rounded-lg shadow-md">
+                    <div className="w-80 mt-8 md:mt-0 bg-white border border-gray-300 p-2 rounded-lg shadow-md">
                         <img
                             className="w-full rounded-md"
                             src={introDashboard_1}
@@ -127,7 +127,7 @@ function IntroPage() {
                     </div>
                 </section>
                 {/*Main2*/}
-                <section className=" py-12 text-center flex flex-col justify-center scroll-snap-align-start ">
+                <section className="py-12 text-center flex flex-col justify-center scroll-snap-align-start ">
                     <AnimatedScroll>
                         <div className="text-center mb-12">
                             <h2 className="text-3xl font-bold text-gray-800">
@@ -168,7 +168,7 @@ function IntroPage() {
                     </AnimatedScroll>
                 </section>
                 {/*Main3*/}
-                <section className=" bg-white flex flex-col justify-center items-center py-16 scroll-snap-align-start">
+                <section className="bg-white flex flex-col justify-center items-center py-16 scroll-snap-align-start">
                     <AnimatedScroll className="w-full flex flex-col items-center">
                         <div className="text-center mb-12">
                             <h2 className="text-3xl font-bold text-gray-800">
@@ -224,7 +224,7 @@ function IntroPage() {
                     </AnimatedScroll>
                 </section>
                 {/*Main4*/}
-                <section className=" bg-white flex flex-col justify-center items-center py-16 scroll-snap-align-start">
+                <section className="bg-white flex flex-col justify-center items-center py-16 scroll-snap-align-start">
                     <AnimatedScroll className="w-full flex flex-col items-center">
                         <div className="text-center mb-12">
                             <h2 className="text-3xl font-bold text-gray-800">
