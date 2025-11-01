@@ -19,4 +19,31 @@
     .underline-animated:hover::after {
         @apply scale-x-100;
     }
+
+    .roboto-bold {
+        font-family: "Roboto", sans-serif;
+        font-optical-sizing: auto;
+        font-weight: 700; /* bold */
+        font-style: normal;
+        font-variation-settings: "wdth" 100;
+    }
+
+    .roboto-light {
+        font-family: "Roboto", sans-serif;
+        font-optical-sizing: auto;
+        font-weight: 300; /* light */
+        font-style: normal;
+        font-variation-settings: "wdth" 100;
+    }
+}
+:root {
+    --font-primary: 'Roboto', sans-serif;
+    --font-weight-normal: 400;
+    --font-weight-bold: 700;
+}
+
+/* Thiết lập font cho body */
+body {
+    font-family: var(--font-primary);
+    font-weight: var(--font-weight-normal);
 }
