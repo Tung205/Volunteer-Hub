@@ -12,7 +12,7 @@ import RegisterPage from "../pages/RegisterPage.jsx";
 
 // Image
 import logo from '../assets/logoApp.png';
-import  introDashboard_1 from '../assets/introDashboard_2.jpg';
+import  introDashboard_1 from '../assets/introDashboard.png';
 import userStory1 from '../assets/userStory1.png';
 import userStory2 from '../assets/userStory2.png';
 import userStory3 from '../assets/userStory3.png';

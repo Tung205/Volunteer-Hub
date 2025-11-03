@@ -36,13 +36,13 @@
         font-variation-settings: "wdth" 100;
     }
 }
+
 :root {
     --font-primary: 'Roboto', sans-serif;
     --font-weight-normal: 400;
     --font-weight-bold: 700;
 }
 
-/* Thiết lập font cho body */
 body {
     font-family: var(--font-primary);
     font-weight: var(--font-weight-normal);
