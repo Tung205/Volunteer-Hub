@@ -1,4 +1,4 @@
-import React, {useState} from 'react'; // Import React
+import React, {useState} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import Swal from 'sweetalert2';
@@ -62,6 +62,8 @@ function RegisterPage() {
             dob: new Date(data.dob)
         };
         console.log("Dữ liệu form hợp lệ (từ Zod):", fullData);
+
+        // TODO: Xử lý logic gọi API đăng ký ở đây
 
         Swal.fire({
             icon: 'success',
