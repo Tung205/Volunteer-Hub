@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { User } from '../models/user.model.js';
 
 export const AuthService = {
@@ -30,11 +31,20 @@ export const AuthService = {
       const err = new Error('ACCOUNT_INACTIVE'); err.status = 403; throw err;
     }
 
+    const token = jwt.sign(
+      { id: user._id, email: user.email, roles: user.roles },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
     return {
-      id: user._id.toString(),
-      email: user.email,
-      name: user.name,
-      roles: user.roles
+      accessToken: token,
+      user: {
+        id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        roles: user.roles
+      }
     };
   }
 };
