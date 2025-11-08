@@ -37,7 +37,7 @@ export const AuthController = {
       const user = await AuthService.login(value);
       return res.status(200).json({ message: 'logged_in', user });
     } catch (e) {
-      if (e.status) return res.status(e.status).json({ error: e.message });
+      if (e.status) return res.status(e.status).json({ error: "Sai mật khẩu, email hoặc email không tồn tại" });
       console.error(e);
       return res.status(500).json({ error: 'INTERNAL' });
     }
