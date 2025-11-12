@@ -5,18 +5,17 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Swal from 'sweetalert2';
 import ReCAPTCHA from 'react-google-recaptcha';
-
 import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
 import loginImage from '../assets/login.png';
-
+import api from '../api/axios';
 const loginSchema = z.object({
     email: z.string().min(1, "Email là bắt buộc").email("Email không hợp lệ"),
     password: z.string().min(1, "Mật khẩu là bắt buộc"),
     recaptcha: z.string().min(1, "Vui lòng xác nhận bạn là con người"),
 });
 
-const RECAPTCHA_SITE_KEY = "6Ld6mgMsAAAAAMFOAXIq5OGHjLfwJjSZIAbcNbHk";
-
+// const RECAPTCHA_SITE_KEY = "6LczHgosAAAAAADagXxJ_uCmyE2LtYYu79b1_x4y";
+const RECAPTCHA_SITE_KEY = "6LePIAosAAAAAMHodd3LgeFAwwuzoS9viUYTpiAT";
 function LoginPage() {
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
@@ -27,21 +26,35 @@ function LoginPage() {
         mode: "onBlur"
     });
 
-    const onSubmit = (data) => {
-        console.log("Dữ liệu form hợp lệ:", data);
-
-        // TODO: GỬI 'data.recaptcha' LÊN BACKEND
-        // Backend của bạn PHẢI dùng "Secret Key" để xác thực token này với Google
-        // trước khi cho phép đăng nhập.
-
-        Swal.fire({
-            icon: 'success',
-            title: 'Đăng nhập thành công! (Demo)',
-            timer: 2000,
-            showConfirmButton: false,
-        }).then(() => {
-            navigate('/dashboard');
-        });
+    const onSubmit = async (data) => {
+        try {
+            console.log("Dữ liệu form hợp lệ:", data);
+            if (!data.recaptcha) {
+                Swal.fire({ icon: 'error', title: 'Vui lòng xác nhận captcha' });
+                return;
+            }
+            // TODO: GỬI 'data.recaptcha' LÊN BACKEND
+            // Backend của bạn PHẢI dùng "Secret Key" để xác thực token này với Google
+            // trước khi cho phép đăng nhập.
+            const res = await api.post("/auth/login", data);
+            Swal.fire({
+                icon: 'success',
+                title: 'Đăng nhập thành công!',
+                timer: 2000,
+                showConfirmButton: false,
+            }).then(() => {
+                navigate('/dashboard');
+            });
+        } catch (error) {
+            console.error("Lỗi đăng nhập:", error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Đăng nhập thất bại',
+                text: error.response?.data?.error || 'Đã có lỗi xảy ra. Vui lòng thử lại.',
+            });
+        } finally {
+             recaptchaRef.current.reset();
+        }
     };
 
     const onError = (errorList) => {
@@ -78,7 +91,7 @@ function LoginPage() {
                         <div>
                             <div className="relative">
                                 <input
-                                    type="showPassword ? 'text' : 'password'"
+                                    type={showPassword ? 'text' : 'password'}
                                     id="password"
                                     placeholder="Password"
                                     {...register("password")}

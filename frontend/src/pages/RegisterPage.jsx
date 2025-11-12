@@ -11,9 +11,9 @@ import register_left from '../assets/register_left.png';
 import register_right from '../assets/register_right.png';
 
 import PolicyPopup from "../components/PolicyPopup.jsx";
-
+import api from '../api/axios';
 const registerSchema = z.object({
-    fullName: z.string().min(1, "Họ và tên là bắt buộc"),
+    name: z.string().min(1, "Họ và tên là bắt buộc"),
     email: z.string().email("Email không hợp lệ"),
     password: z.string()
         .min(1, "Mật khẩu là bắt buộc")
@@ -24,7 +24,7 @@ const registerSchema = z.object({
             }
         ),
     confirmPassword: z.string().min(1, "Vui lòng xác nhận mật khẩu"),
-    dob: z.string()
+    dateOfBirth: z.string()
         .min(1, "Ngày sinh là bắt buộc")
         .refine(val => !isNaN(new Date(val).getTime()), "Ngày sinh không hợp lệ")
         .refine(val => new Date(val) <= new Date(), "Ngày sinh không thể ở tương lai")
@@ -56,23 +56,33 @@ function RegisterPage() {
         mode: "onBlur"
     });
 
-    const onSubmit = (data) => {
+    const onSubmit = async (data) => {
         const fullData = {
             ...data,
             dob: new Date(data.dob)
         };
         console.log("Dữ liệu form hợp lệ (từ Zod):", fullData);
 
-        // TODO: Xử lý logic gọi API đăng ký ở đây
+        try {
+            // TODO: Xử lý logic gọi API đăng ký ở đây
+            const res = await api.post("/auth/register", data);
 
-        Swal.fire({
-            icon: 'success',
-            title: 'Đăng ký thành công!',
-            timer: 2000,
-            showConfirmButton: false,
-        }).then(() => {
-            navigate('/login');
-        });
+            Swal.fire({
+                icon: 'success',
+                title: 'Đăng ký thành công!',
+                timer: 2000,
+                showConfirmButton: false,
+            }).then(() => {
+                navigate('/login');
+            });
+        } catch (error) {
+            console.error(error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Đăng ký thất bại',
+                text: error.response?.data?.error || 'Đã có lỗi xảy ra.',
+            });
+        }
     };
 
     const onError = (errorList) => {
@@ -101,7 +111,7 @@ function RegisterPage() {
                                 type="text"
                                 id="fullName"
                                 placeholder="Họ và tên"
-                                {...register("fullName")}
+                                {...register("name")}
                                 className={`w-full px-4 py-3 border ${errors.fullName ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500`}
                             />
                             {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName.message}</p>}
@@ -165,7 +175,7 @@ function RegisterPage() {
                             <input
                                 type="date"
                                 id="dob"
-                                {...register("dob")}
+                                {...register("dateOfBirth")}
                                 className={`w-full px-4 py-3 border ${errors.dob ? 'border-red-500' : 'border-gray-300'} rounded-lg text-gray-700 cursor-pointer`}
                             />
                             {errors.dob && <p className="text-red-500 text-sm mt-1">{errors.dob.message}</p>}

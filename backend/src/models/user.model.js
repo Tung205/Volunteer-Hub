@@ -5,7 +5,8 @@ const userSchema = new mongoose.Schema({
   passwordHash: { type: String, required: true },
   name:         { type: String, default: '' },
   roles:        { type: [String], default: ['VOLUNTEER'] },
-  status:       { type: String, default: 'ACTIVE' }
+  dateOfBirth:  { type: Date, default: null },
+  gender:       { type: String, enum: ['Nam', 'Nữ', 'Khác'], default: 'Khác' },
 }, { timestamps: true });
 
 export const User = mongoose.model('User', userSchema);
