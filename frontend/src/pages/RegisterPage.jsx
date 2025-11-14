@@ -59,7 +59,7 @@ function RegisterPage() {
     const onSubmit = async (data) => {
         const fullData = {
             ...data,
-            dob: new Date(data.dob)
+            dateOfBirth: new Date(data.dateOfBirth)
         };
         console.log("Dữ liệu form hợp lệ (từ Zod):", fullData);
 
@@ -171,14 +171,14 @@ function RegisterPage() {
                             {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>}
                         </div>
                         <div>
-                            <label htmlFor="dob" className="block text-sm font-medium text-gray-700 mb-2">Ngày sinh</label>
+                            <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-2">Ngày sinh</label>
                             <input
                                 type="date"
-                                id="dob"
+                                id="dateOfBirth"
                                 {...register("dateOfBirth")}
-                                className={`w-full px-4 py-3 border ${errors.dob ? 'border-red-500' : 'border-gray-300'} rounded-lg text-gray-700 cursor-pointer`}
+                                className={`w-full px-4 py-3 border ${errors.dateOfBirth ? 'border-red-500' : 'border-gray-300'} rounded-lg text-gray-700 cursor-pointer`}
                             />
-                            {errors.dob && <p className="text-red-500 text-sm mt-1">{errors.dob.message}</p>}
+                            {errors.dateOfBirth && <p className="text-red-500 text-sm mt-1">{errors.dateOfBirth.message}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Giới tính</label>
