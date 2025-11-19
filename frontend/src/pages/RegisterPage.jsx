@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
+import { AiOutlineLoading3Quarters } from 'react-icons/ai'
 import register_left from '../assets/register_left.png';
 import register_right from '../assets/register_right.png';
 
@@ -50,6 +51,7 @@ function RegisterPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isPolicyOpen, setIsPolicyOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const { register, handleSubmit, formState: { errors } } = useForm({
         resolver: zodResolver(registerSchema),
@@ -63,9 +65,11 @@ function RegisterPage() {
         };
         console.log("Dữ liệu form hợp lệ (từ Zod):", fullData);
 
+        setIsLoading(true);
         try {
             // TODO: Xử lý logic gọi API đăng ký ở đây
-            const res = await api.post("/auth/register", data);
+            const res = await api.post("/auth/register", fullData);
+            setIsLoading(false);
 
             Swal.fire({
                 icon: 'success',
@@ -76,11 +80,32 @@ function RegisterPage() {
                 navigate('/login');
             });
         } catch (error) {
-            console.error(error);
+            console.error("Lỗi đăng ký:", error);
+            setIsLoading(false);
+            const errorResponse = error.response?.data;
+            let errorMessage = 'Không thể kết nối đến máy chủ.';
+
+            if (errorResponse) {
+                //Validation
+                if (errorResponse.error === 'VALIDATION' && Array.isArray(errorResponse.details)) {
+                    errorMessage = `<div class="text-left text-sm">${errorResponse.details.map(msg => `• ${msg}`).join('<br/>')}</div>`;
+                }
+                //(INTERNAL)
+                else if (errorResponse.error === 'INTERNAL') {
+                    errorMessage = 'Hệ thống đang gặp sự cố. Vui lòng thử lại sau.';
+                }
+                //Error Business
+                else if (errorResponse.error) {
+                    errorMessage = errorResponse.error;
+                }
+            }
+
             Swal.fire({
                 icon: 'error',
                 title: 'Đăng ký thất bại',
-                text: error.response?.data?.error || 'Đã có lỗi xảy ra.',
+                html: errorMessage, 
+                confirmButtonText: 'Thử lại',
+                confirmButtonColor: '#16a34a'
             });
         }
     };
@@ -112,7 +137,7 @@ function RegisterPage() {
                                 id="fullName"
                                 placeholder="Họ và tên"
                                 {...register("name")}
-                                className={`w-full px-4 py-3 border ${errors.fullName ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500`}
+                                className={`w-full px-4 py-3 border ${errors.name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500`}
                             />
                             {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
                         </div>
@@ -222,9 +247,25 @@ function RegisterPage() {
                         <div>
                             <button
                                 type="submit"
-                                className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-semibold text-lg hover:bg-green-700 transition duration-300 hover:cursor-pointer"
+                                disabled={isLoading}
+                                className={`
+                                    w-full py-3 px-4 rounded-lg font-semibold text-lg transition duration-300
+                                    flex items-center justify-center gap-2
+                                    ${isLoading 
+                                        ? 'bg-green-400 cursor-not-allowed'
+                                        : 'bg-green-600 hover:bg-green-700 hover:cursor-pointer'
+                                    }
+                                    text-white
+                                `}
                             >
-                                Đăng ký
+                                {isLoading ? (
+                                    <>
+                                        <AiOutlineLoading3Quarters className="animate-spin h-5 w-5" />
+                                        <span>Đang xử lý...</span>
+                                    </>
+                                ) : (
+                                    "Đăng ký"
+                                )}
                             </button>
                         </div>
                         <p className="text-center text-sm text-gray-600">
