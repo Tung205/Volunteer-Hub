@@ -34,14 +34,14 @@ const registerSchema = z.object({
             return new Date(val) <= minAgeDate;
         }, "Bạn phải đủ 16 tuổi để tham gia"),
     gender: z.enum(["Nam", "Nữ", "Khác"], {
-        errorMap: () => ({ message: "Vui lòng chọn giới tính" })
+        errorMap: () => ({ message: "Vui lòng chọn giới tính" }),
     }),
     acceptTerms: z.boolean().refine(val => val === true, {
         message: "Bạn phải chấp nhận chính sách của chúng tôi"
     })
 }).refine(data => data.password === data.confirmPassword, {
     message: "Mật khẩu không khớp",
-    path: ["confirmPassword"] // Báo lỗi cho trường 'confirmPassword'
+    path: ["confirmPassword"]
 });
 
 
@@ -114,7 +114,7 @@ function RegisterPage() {
                                 {...register("name")}
                                 className={`w-full px-4 py-3 border ${errors.fullName ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500`}
                             />
-                            {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName.message}</p>}
+                            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
                         </div>
                         <div>
                             <label htmlFor="email" className="sr-only">Email</label>
@@ -138,7 +138,8 @@ function RegisterPage() {
                                     className={`w-full px-4 py-3 pr-10 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500`}
                                 />
                                 <button
-                                    type="button" // Quan trọng: Ngăn form submit
+                                    type="button"
+                                    tabIndex={-1}
                                     onClick={() => setShowPassword(!showPassword)}
                                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-green-600 cursor-pointer"
                                 >
@@ -151,7 +152,6 @@ function RegisterPage() {
                             <label htmlFor="confirmPassword" className="sr-only">Xác nhận mật khẩu</label>
                             <div className="relative">
                                 <input
-                                    // 2. Đổi type dựa trên state
                                     type={showConfirmPassword ? "text" : "password"}
                                     id="confirmPassword"
                                     placeholder="Xác nhận mật khẩu"
@@ -159,9 +159,9 @@ function RegisterPage() {
                                     // Thêm 'pr-10'
                                     className={`w-full px-4 py-3 pr-10 border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500`}
                                 />
-                                {/* 3. Thêm nút icon */}
                                 <button
                                     type="button"
+                                    tabIndex={-1}
                                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-green-600 cursor-pointer"
                                 >
