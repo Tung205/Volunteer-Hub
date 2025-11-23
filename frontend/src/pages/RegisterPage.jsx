@@ -68,7 +68,7 @@ function RegisterPage() {
         setIsLoading(true);
         try {
             // TODO: Xử lý logic gọi API đăng ký ở đây
-            const res = await api.post("/auth/register", fullData);
+            // const res = await api.post("/auth/register", fullData);
             setIsLoading(false);
 
             Swal.fire({
