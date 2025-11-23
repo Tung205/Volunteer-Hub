@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { AuthService } from '../services/auth.js';
+import { AuthService } from '../services/auth.service.js';
 import axios from 'axios';
 const registerSchema = Joi.object({
   email: Joi.string().email().required(),
