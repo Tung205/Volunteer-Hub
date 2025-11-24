@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { use, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import { BsPersonWorkspace, BsArrowRight } from 'react-icons/bs';
 import { HiOutlineCalendar, HiUserGroup } from 'react-icons/hi';
 
 // Components
 import AnimatedScroll from "../components/AnimatedScroll.jsx";
+import InfoEvent from '../components/InfoEvent';
 
 import introDashboard_1 from '../assets/introDashboard.png';
 import userStory1 from '../assets/userStory1.png';
@@ -37,12 +39,68 @@ const HomePage = () => {
     ];
 
     const [activeStoryIndex, setActiveStoryIndex] = useState(0);
+    const [selectedEvent, setSelectedEvent] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const activeStory = stories[activeStoryIndex];
+    const navigate = useNavigate();
+
+    const handleEventClick = (event) => {
+        setSelectedEvent(event);
+        setIsModalOpen(true);
+  };
+
+  const handleRegister = () => {
+      const isAuthenticated = localStorage.getItem('accessToken'); 
+  
+      if (!isAuthenticated) {
+        setIsModalOpen(false);
+  
+        // Tạo URL Redirect
+        const redirectUrl = `/events?eventId=${selectedEvent.id}&popup=true&autoRegister=true`;
+        
+        //don't log in
+        Swal.fire({
+          icon: 'warning',
+          title: 'Bạn chưa đăng nhập',
+          text: 'Vui lòng đăng nhập để đăng ký sự kiện!',
+          showCancelButton: true,
+          confirmButtonText: 'Đăng nhập ngay',
+          cancelButtonText: 'Hủy',
+          confirmButtonColor: '#16a34a'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            //direct Login + redirect params
+            navigate(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
+          }
+        });
+        return;
+      }
+  
+      //log in
+      Swal.fire({
+          title: 'Đang xử lý...',
+          didOpen: () => Swal.showLoading(),
+          timer: 1000
+      }).then(() => {
+          const updatedEvents = events.map(ev => 
+              ev.id === selectedEvent.id ? { ...ev, userStatus: 'pending' } : ev
+          );
+          setEvents(updatedEvents);
+          
+          setSelectedEvent(prev => ({ ...prev, userStatus: 'pending' }));
+  
+          Swal.fire('Thành công', 'Đăng ký thành công! Vui lòng chờ duyệt.', 'success');
+      });
+    };
+  
+    const handleJoinChat = () => {
+      navigate('/');
+    };
 
     const dummyEvents = [
-        { id: 1, title: "Áo ấm cho em", location: "Hà Giang", date: "2/11/2025" },
-        { id: 2, title: "Chủ Nhật Xanh", location: "Hà Nội", date: "5/11/2025" },
-        { id: 3, title: "Hiến máu nhân đạo", location: "Đà Nẵng", date: "10/11/2025" }
+        { id: 1, title: "Áo ấm cho em", location: "Hà Giang", date: "2/11/2025", userStatus: null },
+        { id: 2, title: "Chủ Nhật Xanh", location: "Hà Nội", date: "5/11/2025", userStatus: null},
+        { id: 3, title: "Hiến máu nhân đạo", location: "Đà Nẵng", date: "10/11/2025", userStatus: null }
     ];
 
     return (
@@ -162,16 +220,25 @@ const HomePage = () => {
                             <h3 className="text-xl font-bold text-gray-800 mb-2">{event.title}</h3>
                             <p className="text-gray-600 text-sm mb-1">📍 {event.location}</p>
                             <p className="text-gray-600 text-sm mb-4">📅 {event.date}</p>
-                            <Link 
-                                to={`/events/${event.id}`} 
+                            <button 
+                                onClick={() => handleEventClick(event)}
                                 className="mt-auto text-center block w-full py-2 rounded-full border border-green-600 text-green-600 font-semibold hover:bg-green-600 hover:text-white transition"
                             >
                                 Xem chi tiết
-                            </Link>
+                            </button>
                         </div>
                     ))}
                 </div>
             </section>
+
+            <InfoEvent 
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                event={selectedEvent}
+                userStatus={selectedEvent?.userStatus || 'guest'}
+                onRegister={handleRegister}
+                onJoinChat={handleJoinChat}
+            />
 
         </div>
     );
