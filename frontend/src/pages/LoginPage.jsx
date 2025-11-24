@@ -127,6 +127,7 @@ function LoginPage() {
                                 />
                                 <button
                                     type="button"
+                                    tabIndex={-1}
                                     onClick={() => setShowPassword(!showPassword)}
                                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-green-600 cursor-pointer">
                                     {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}

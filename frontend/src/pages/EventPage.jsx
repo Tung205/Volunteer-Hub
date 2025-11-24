@@ -7,6 +7,8 @@ import EventCard from '../components/EventCard';
 
 import bannerImage from '../assets/introDashboard.png';
 
+import { IoSearch } from "react-icons/io5";
+
 //simulation (10 events)
 const MOCK_EVENTS = Array.from({ length: 12 }).map((_, index) => ({
   id: index + 1,
@@ -139,11 +141,58 @@ const EventPage = () => {
       {/*SECTION 1: BANNER*/}
       <section className="w-full h-[300px] md:h-[400px] relative">
          <img 
-            src={bannerImage} // Ảnh banner xanh lá của bạn
+            src={bannerImage}
             alt="Search Banner"
             className="w-full h-full object-cover"
          />
-         {/* Sau này bạn sẽ code đè phần search box lên đây */}
+         <div className="absolute inset-0 bg-black/50"></div>
+         
+         {/* search box */}
+         <div className='absolute inset-0 flex flex-col items-center justify-center px-4 text-center z-10'>
+             <h1 className="text-white text-2xl md:text-4xl font-bold mb-2">Xin chào,</h1>
+             <h2 className='text-white text-2xl md:text-4xl font-bold mb-8'>
+                 Hôm nay bạn muốn tham gia sự kiện nào?
+             </h2>
+
+             <div className='w-full max-w-3xl relative mb-6 bg-white/80'>
+                 <input
+                     type='text'
+                     placeholder='Nhập sự kiện bạn muốn tham gia'
+                     className='w-full py-4 px-6 rounded-sm text-gray-700 outline-none focus:ring-2 focus:ring-green-500 shadow-lg text-lg'
+                 />
+                 <button className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-green-600">
+                     <IoSearch size={28} />
+                 </button>
+             </div>
+
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl mb-8">
+                 <div className="relative">
+                     <select className="w-full py-3 px-4 rounded-sm text-gray-600 bg-white border-none outline-none cursor-pointer text-center font-medium shadow-sm hover:bg-gray-50 appearance-none">
+                         <option value="">-- Chọn Địa điểm --</option>
+                         <option value="HN">Hà Nội</option>
+                         <option value="HCM">TP. Hồ Chí Minh</option>
+                         <option value="DN">Đà Nẵng</option>
+                         <option value="HP">Hải Phòng</option>
+                         <option value="CT">Cần Thơ</option>
+                         <option value="LC">Lào Cai</option>
+                         <option value="HG">Hà Giang</option>
+                     </select>
+                 </div>
+
+                 <div className="relative">
+                     <select className="w-full py-3 px-4 rounded-sm text-gray-600 bg-white border-none outline-none cursor-pointer text-center font-medium shadow-sm hover:bg-gray-50 appearance-none">
+                         <option value="">-- Chọn Quy mô --</option>
+                         <option value="small">Nhóm nhỏ (&lt; 20 người)</option>
+                         <option value="medium">Vừa (20 - 100 người)</option>
+                         <option value="large">Lớn (&gt; 100 người)</option>
+                     </select>
+                 </div>
+             </div>
+
+             <button className="bg-[#bfd200] hover:bg-[#a3b800] text-black font-bold py-3 px-16 rounded shadow-lg transition-transform transform hover:scale-105 text-lg uppercase tracking-wide">
+                 Tìm kiếm
+             </button>
+         </div>
       </section>
 
       {/*SECTION 2: List Event*/}

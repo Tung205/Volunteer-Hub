@@ -73,7 +73,7 @@ const HomePage = () => {
                 <AnimatedScroll>
                     <div className="text-center mb-12">
                         <h2 className="text-3xl font-bold text-gray-800">Cách hoạt động</h2>
-                        <div className="w-24 h-1 bg-green-600 mx-auto mt-2"></div>
+                        <div className="w-50 h-1 bg-green-600 mx-auto mt-2"></div>
                     </div>
                     <div className="flex flex-col md:flex-row justify-center items-center md:items-start gap-4 md:gap-12">
                         {/* Step 1 */}
@@ -112,7 +112,7 @@ const HomePage = () => {
             <section className="py-20 bg-white">
                 <div className="text-center mb-12">
                     <h2 className="text-3xl font-bold text-gray-800">Câu chuyện tình nguyện</h2>
-                    <div className="w-24 h-1 bg-green-600 mx-auto mt-2"></div>
+                    <div className="w-50 h-1 bg-green-600 mx-auto mt-2"></div>
                 </div>
                 
                 <div className="w-full max-w-6xl mx-auto px-4">
@@ -151,7 +151,7 @@ const HomePage = () => {
             <section className="py-20 bg-gray-50">
                 <div className="text-center mb-12">
                     <h2 className="text-3xl font-bold text-gray-800">Sự kiện nổi bật</h2>
-                    <div className="w-24 h-1 bg-green-600 mx-auto mt-2"></div>
+                    <div className="w-50 h-1 bg-green-600 mx-auto mt-2"></div>
                 </div>
                 <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 px-6">
                     {dummyEvents.map((event) => (
