@@ -4,10 +4,11 @@ const EventCard = ({ event, onClick }) => {
   return (
     <div className="bg-white border border-gray-300 rounded-lg shadow-sm hover:shadow-md transition flex overflow-hidden h-32 md:h-40">
 
-      <div className="w-1/3 md:w-40 flex-shrink-0">
+      <div className="w-1/3 md:w-40 flex-shrink-0 bg-gray-200">
         <img 
           src={event.imageUrl} 
           alt={event.title} 
+          loading="lazy"
           className="w-full h-full object-cover"
         />
       </div>
