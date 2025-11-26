@@ -1,4 +1,6 @@
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
+import { Event } from '../models/event.model.js';
 
 /**
  * Middleware xác thực user đã đăng nhập
@@ -8,7 +10,7 @@ export const isAuthenticated = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ message: 'Token không tồn tại' });
+      return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Token không tồn tại' });
     }
 
     const token = authHeader.replace('Bearer ', '');
@@ -17,17 +19,101 @@ export const isAuthenticated = async (req, res, next) => {
     req.user = {
       id: decoded.id,
       email: decoded.email,
-      roles: decoded.roles
+      roles: decoded.roles || ['VOLUNTEER']
     };
     
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({ message: 'Token không hợp lệ' });
+      return res.status(401).json({ error: 'INVALID_TOKEN', message: 'Token không hợp lệ' });
     }
     if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ message: 'Token đã hết hạn' });
+      return res.status(401).json({ error: 'TOKEN_EXPIRED', message: 'Token đã hết hạn' });
     }
-    return res.status(401).json({ message: 'Xác thực thất bại' });
+    return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Xác thực thất bại' });
+  }
+};
+
+/**
+ * Middleware kiểm tra user có role yêu cầu
+ * @param {...string} roles - Các role được phép (VOLUNTEER, MANAGER, ADMIN)
+ * @example hasRole('MANAGER', 'ADMIN')
+ */
+export const hasRole = (...roles) => {
+  return (req, res, next) => {
+    // Check if user exists (should be set by isAuthenticated)
+    if (!req.user) {
+      return res.status(401).json({ 
+        error: 'UNAUTHORIZED', 
+        message: 'Vui lòng đăng nhập' 
+      });
+    }
+    
+    const userRoles = req.user.roles || [];
+    
+    // Check if user has any of the required roles
+    const hasPermission = roles.some(role => userRoles.includes(role));
+    
+    if (!hasPermission) {
+      return res.status(403).json({ 
+        error: 'FORBIDDEN', 
+        message: `Bạn không có quyền thực hiện thao tác này. Yêu cầu: ${roles.join(' hoặc ')}` 
+      });
+    }
+    
+    next();
+  };
+};
+
+/**
+ * Middleware kiểm tra user có quyền sửa/xóa event
+ * - Owner của event (managerId === userId)
+ * - ADMIN (có quyền với mọi event)
+ */
+export const canModifyEvent = async (req, res, next) => {
+  try {
+    const eventId = req.params.id;
+    const userId = req.user.id;
+    const userRoles = req.user.roles || [];
+    
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(eventId)) {
+      return res.status(400).json({ 
+        error: 'INVALID_EVENT_ID', 
+        message: 'ID sự kiện không hợp lệ' 
+      });
+    }
+    
+    // Find event
+    const event = await Event.findById(eventId).lean();
+    
+    if (!event) {
+      return res.status(404).json({ 
+        error: 'EVENT_NOT_FOUND', 
+        message: 'Không tìm thấy sự kiện' 
+      });
+    }
+    
+    // Check permission
+    const isOwner = event.managerId.toString() === userId;
+    const isAdmin = userRoles.includes('ADMIN');
+    
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ 
+        error: 'FORBIDDEN', 
+        message: 'Bạn không có quyền thao tác với sự kiện này' 
+      });
+    }
+    
+    // Attach event to request for reuse in controller
+    req.event = event;
+    
+    next();
+  } catch (error) {
+    console.error('canModifyEvent error:', error);
+    return res.status(500).json({ 
+      error: 'INTERNAL', 
+      message: 'Lỗi kiểm tra quyền truy cập' 
+    });
   }
 };
