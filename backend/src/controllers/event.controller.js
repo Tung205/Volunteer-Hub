@@ -4,13 +4,12 @@ import { EventService } from '../services/event.service.js';
 const getEventsQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(50).default(6),
-  status: Joi.string().valid('DRAFT', 'PUBLISHED', 'ONGOING', 'COMPLETED', 'CANCELLED'),
-  category: Joi.string(),
-  city: Joi.string(),
+  status: Joi.string().valid('DRAFT', 'OPEN', 'CLOSED', 'CANCELLED'),
+  location: Joi.string(),
   search: Joi.string().max(100),
   startDate: Joi.date(),
   endDate: Joi.date(),
-  sort: Joi.string().valid('upcoming', 'popular', 'newest').default('upcoming')
+  sort: Joi.string().valid('upcoming', 'newest').default('upcoming')
 });
 
 const suggestionsQuerySchema = Joi.object({
@@ -27,32 +26,22 @@ const createEventSchema = Joi.object({
     'string.min': 'Tiêu đề phải có ít nhất 3 ký tự',
     'string.max': 'Tiêu đề không quá 200 ký tự'
   }),
-  description: Joi.string().max(5000).default(''),
-  category: Joi.string().max(50).default(''),
-  
-  location: Joi.object({
-    city: Joi.string().required().messages({
-      'string.empty': 'Thành phố không được để trống'
-    }),
-    address: Joi.string().default(''),
-    geo: Joi.object({
-      type: Joi.string().valid('Point').default('Point'),
-      coordinates: Joi.array().items(Joi.number()).length(2)
-    })
-  }).required(),
-  
-  time: Joi.object({
-    start: Joi.date().required().greater('now').messages({
-      'date.greater': 'Thời gian bắt đầu phải sau thời điểm hiện tại'
-    }),
-    end: Joi.date().required().greater(Joi.ref('start')).messages({
-      'date.greater': 'Thời gian kết thúc phải sau thời gian bắt đầu'
-    })
-  }).required(),
-  
-  capacity: Joi.number().integer().min(1).default(0),
-  status: Joi.string().valid('DRAFT', 'PUBLISHED').default('DRAFT'),
-  coverUrl: Joi.string().uri().allow('').default('')
+  description: Joi.string().required().max(5000).messages({
+    'string.empty': 'Mô tả không được để trống'
+  }),
+  location: Joi.string().required().messages({
+    'string.empty': 'Địa điểm không được để trống'
+  }),
+  address: Joi.string().allow('').default(''),
+  startTime: Joi.date().required().greater('now').messages({
+    'date.greater': 'Thời gian bắt đầu phải sau thời điểm hiện tại'
+  }),
+  endTime: Joi.date().greater(Joi.ref('startTime')).messages({
+    'date.greater': 'Thời gian kết thúc phải sau thời gian bắt đầu'
+  }),
+  maxParticipants: Joi.number().integer().min(0).default(0),
+  status: Joi.string().valid('DRAFT', 'OPEN').default('OPEN'),
+  coverImageUrl: Joi.string().uri().allow('').default('')
 });
 
 export const EventController = {
@@ -164,11 +153,12 @@ export const EventController = {
     }
 
     try {
-      // Get managerId from authenticated user
-      const managerId = req.user.id;
+      // Get user info from authenticated user
+      const userId = req.user.id;
+      const userName = req.user.name || req.user.email;
       
       // Create event
-      const event = await EventService.createEvent(value, managerId);
+      const event = await EventService.createEvent(value, userId, userName);
       
       return res.status(201).json({
         message: 'Tạo sự kiện thành công',

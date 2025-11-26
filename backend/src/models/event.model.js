@@ -1,37 +1,86 @@
 import mongoose from 'mongoose';
 
-const eventSchema = new mongoose.Schema({
-  title:        { type: String, required: true },
-  description:  { type: String, default: '' },
-  category:     { type: String, default: '' }, // ví dụ: environment/community
-  location: {
-    city:       { type: String, index: true },
-    address:    { type: String, default: '' },
-    geo: {
-      type:        { type: String, enum: ['Point'], default: 'Point' },
-      coordinates: { type: [Number], default: undefined } // [lng, lat]
-    }
-  },
-  time: {
-    start:      { type: Date, required: true },
-    end:        { type: Date, required: true }
-  },
-  capacity:     { type: Number, default: 0 },
-  status:       { type: String, enum: ['DRAFT', 'PUBLISHED', 'ONGOING', 'COMPLETED', 'CANCELLED'], default: 'DRAFT' },
-  managerId:    { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  stats: {
-    registrations: { type: Number, default: 0 },
-    approved:      { type: Number, default: 0 },
-    posts:         { type: Number, default: 0 },
-    likes:         { type: Number, default: 0 }
-  },
-  coverUrl:     { type: String, default: '' }
-}, { timestamps: true });
+const EventSchema = new mongoose.Schema(
+  {
+    title: {            // Tên sự kiện
+      type: String,
+      required: true,
+      trim: true,  // tự động xóa dấu cách thừa ở cuối
+    },
+ 
+    description: {      // Mô tả chi tiết (đoạn dưới trong pop-up)
+      type: String,
+      required: true,
+    },
+    location: {         // Địa điểm (Lào Cai, Hà Nội…)
+      type: String,
+      required: true,
+      index: true,
+    },
+    address: {          // Địa chỉ cụ thể (optional)
+      type: String,
+    },
+    startTime: {        // Thời gian bắt đầu
+      type: Date,
+      required: true,
+      index: true,
+    },
+    endTime: {          // Thời gian kết thúc (optional)
+      type: Date,
+    },
+    organizerId: {      // Người tổ chức sự kiện (manager)
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      index: true,
+    },
+    organizerName: {    // Cache để show nhanh trong pop-up
+      type: String,
+ },
 
-// Indexes
-eventSchema.index({ status: 1, 'time.start': 1 });
-eventSchema.index({ 'location.city': 1 });
-eventSchema.index({ title: 'text', description: 'text' });
-eventSchema.index({ 'location.geo': '2dsphere' });
+    // Quy mô / giới hạn tham gia
+    maxParticipants: {
+      type: Number,
+      default: 0,       // 0 = không giới hạn
+    },
+    currentParticipants: {
+      type: Number,
+      default: 0,
+    },
 
-export const Event = mongoose.model('Event', eventSchema);
+    // Trạng thái sự kiện
+    status: {
+      type: String,
+      enum: ['DRAFT', 'OPEN', 'CLOSED', 'CANCELLED'],
+      default: 'OPEN',
+      index: true,
+    },
+
+    // Hiển thị trên giao diện
+    coverImageUrl: {     // Ảnh phía trái các card
+      type: String,
+    },
+  },
+  {
+    timestamps: true,    // createdAt, updatedAt
+  }
+);
+
+// Tự động tạo searchText trước khi save
+EventSchema.pre('save', function (next) {
+  this.searchText = [
+    this.title,
+    this.location,
+    this.category,
+    (this.tags || []).join(' '),
+    this.description,
+  ]
+    .filter(Boolean)
+    .join(' ');
+  next();
+});
+
+// Index cho text search
+EventSchema.index({ searchText: 'text' });
+
+export const Event = mongoose.model('Event', EventSchema);

@@ -12,14 +12,9 @@ export const EventService = {
       query.status = filters.status;
     }
     
-    // Filter by category
-    if (filters.category) {
-      query.category = filters.category;
-    }
-    
-    // Filter by city
-    if (filters.city) {
-      query['location.city'] = filters.city;
+    // Filter by location
+    if (filters.location) {
+      query.location = new RegExp(filters.location, 'i'); // Case-insensitive search
     }
     
     // Text search
@@ -29,12 +24,12 @@ export const EventService = {
     
     // Date range filter
     if (filters.startDate || filters.endDate) {
-      query['time.start'] = {};
+      query.startTime = {};
       if (filters.startDate) {
-        query['time.start'].$gte = new Date(filters.startDate);
+        query.startTime.$gte = new Date(filters.startDate);
       }
       if (filters.endDate) {
-        query['time.start'].$lte = new Date(filters.endDate);
+        query.startTime.$lte = new Date(filters.endDate);
       }
     }
     
@@ -43,13 +38,11 @@ export const EventService = {
 
   buildSortOptions(sortType = 'upcoming') {
     switch (sortType) {
-      case 'popular':
-        return { 'stats.likes': -1, 'stats.registrations': -1 };
       case 'newest':
         return { createdAt: -1 };
       case 'upcoming':
       default:
-        return { 'time.start': 1 };
+        return { startTime: 1 };
     }
   },
 
@@ -86,7 +79,7 @@ export const EventService = {
     
     // Populate manager info if needed
     if (populate) {
-      queryBuilder = queryBuilder.populate('managerId', 'name email');
+      queryBuilder = queryBuilder.populate('organizerId', 'name email');
     }
     
     // Execute query and count in parallel for better performance
@@ -122,7 +115,7 @@ export const EventService = {
     let query = Event.findById(id);
     
     if (populate) {
-      query = query.populate('managerId', 'name email');
+      query = query.populate('organizerId', 'name email');
     }
     
     const event = await query.lean();
@@ -140,19 +133,17 @@ export const EventService = {
   async findHighlightedEvents(limit = 6) {
     const now = new Date();
     
-    // Find published events that haven't started yet
-    // Sort by popularity (likes, registrations) and upcoming date
+    // Find OPEN events that haven't started yet
     const events = await Event.find({
-      status: 'PUBLISHED',
-      'time.start': { $gte: now }
+      status: 'OPEN',
+      startTime: { $gte: now }
     })
     .sort({
-      'stats.likes': -1,           // Most liked first
-      'stats.registrations': -1,   // Most registered first
-      'time.start': 1               // Soonest first
+      currentParticipants: -1,   // Most participants first
+      startTime: 1                // Soonest first
     })
     .limit(limit)
-    .populate('managerId', 'name email')
+    .populate('organizerId', 'name email')
     .lean();
     
     return events;
@@ -171,7 +162,7 @@ export const EventService = {
     const events = await Event.find(
       {
         $text: { $search: sanitizedQuery },
-        status: 'PUBLISHED'
+        status: 'OPEN'
       },
       {
         score: { $meta: 'textScore' } // Add relevance score
@@ -179,32 +170,27 @@ export const EventService = {
     )
     .sort({ score: { $meta: 'textScore' } }) // Sort by relevance
     .limit(limit)
-    .select('_id title coverUrl location.city time.start') // Only return needed fields
+    .select('_id title coverImageUrl location startTime') // Only return needed fields
     .lean();
     
     return events;
   },
 
   // CRUD OPERATIONS
-  async createEvent(eventData, managerId) {
+  async createEvent(eventData, organizerId, organizerName) {
     try {
-      // Set managerId from authenticated user
+      // Set organizer info from authenticated user
       const newEvent = {
         ...eventData,
-        managerId,
-        status: eventData.status || 'DRAFT',
-        stats: {
-          registrations: 0,
-          approved: 0,
-          posts: 0,
-          likes: 0
-        }
+        organizerId,
+        organizerName,
+        currentParticipants: 0
       };
 
       // Create event
       const event = await Event.create(newEvent);
 
-      // Return created event
+      // Return created event as plain object
       return event.toObject();
     } catch (error) {
       if (error.name === 'ValidationError') {
