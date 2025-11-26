@@ -21,6 +21,40 @@ const eventIdParamSchema = Joi.object({
   id: Joi.string().required()
 });
 
+const createEventSchema = Joi.object({
+  title: Joi.string().required().min(3).max(200).messages({
+    'string.empty': 'Tiêu đề không được để trống',
+    'string.min': 'Tiêu đề phải có ít nhất 3 ký tự',
+    'string.max': 'Tiêu đề không quá 200 ký tự'
+  }),
+  description: Joi.string().max(5000).default(''),
+  category: Joi.string().max(50).default(''),
+  
+  location: Joi.object({
+    city: Joi.string().required().messages({
+      'string.empty': 'Thành phố không được để trống'
+    }),
+    address: Joi.string().default(''),
+    geo: Joi.object({
+      type: Joi.string().valid('Point').default('Point'),
+      coordinates: Joi.array().items(Joi.number()).length(2)
+    })
+  }).required(),
+  
+  time: Joi.object({
+    start: Joi.date().required().greater('now').messages({
+      'date.greater': 'Thời gian bắt đầu phải sau thời điểm hiện tại'
+    }),
+    end: Joi.date().required().greater(Joi.ref('start')).messages({
+      'date.greater': 'Thời gian kết thúc phải sau thời gian bắt đầu'
+    })
+  }).required(),
+  
+  capacity: Joi.number().integer().min(1).default(0),
+  status: Joi.string().valid('DRAFT', 'PUBLISHED').default('DRAFT'),
+  coverUrl: Joi.string().uri().allow('').default('')
+});
+
 export const EventController = {
   
   // GET /api/events - Lấy danh sách events với filter + pagination
@@ -109,6 +143,39 @@ export const EventController = {
       return res.json({ event });
     } catch (e) {
       if (e.status) return res.status(e.status).json({ error: e.message });
+      console.error(e);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
+  },
+
+  // POST /api/events - Tạo sự kiện mới (MANAGER only)
+  async createEvent(req, res) {
+    // Validate request body
+    const { error, value } = createEventSchema.validate(req.body, {
+      abortEarly: false,
+      stripUnknown: true
+    });
+    
+    if (error) {
+      return res.status(400).json({
+        error: 'VALIDATION',
+        details: error.details.map(d => d.message)
+      });
+    }
+
+    try {
+      // Get managerId from authenticated user
+      const managerId = req.user.id;
+      
+      // Create event
+      const event = await EventService.createEvent(value, managerId);
+      
+      return res.status(201).json({
+        message: 'Tạo sự kiện thành công',
+        event
+      });
+    } catch (e) {
+      if (e.status) return res.status(e.status).json({ error: e.message, details: e.details });
       console.error(e);
       return res.status(500).json({ error: 'INTERNAL' });
     }

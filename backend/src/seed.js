@@ -26,7 +26,18 @@ seedRouter.post('/seed', async (req, res) => {
         email: 'admin@test.com',
         passwordHash: hashedPassword,
         name: 'Admin Test',
-        roles: ['VOLUNTEER', 'ORGANIZER'],
+        roles: ['VOLUNTEER', 'MANAGER'],
+      });
+    }
+    
+    // Tạo thêm user MANAGER để test
+    let manager = await User.findOne({ email: 'manager@test.com' });
+    if (!manager) {
+      manager = await User.create({
+        email: 'manager@test.com',
+        passwordHash: hashedPassword,
+        name: 'Manager Test',
+        roles: ['MANAGER'],
       });
     }
 

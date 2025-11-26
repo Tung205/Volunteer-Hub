@@ -183,5 +183,37 @@ export const EventService = {
     .lean();
     
     return events;
+  },
+
+  // CRUD OPERATIONS
+  async createEvent(eventData, managerId) {
+    try {
+      // Set managerId from authenticated user
+      const newEvent = {
+        ...eventData,
+        managerId,
+        status: eventData.status || 'DRAFT',
+        stats: {
+          registrations: 0,
+          approved: 0,
+          posts: 0,
+          likes: 0
+        }
+      };
+
+      // Create event
+      const event = await Event.create(newEvent);
+
+      // Return created event
+      return event.toObject();
+    } catch (error) {
+      if (error.name === 'ValidationError') {
+        const err = new Error('VALIDATION_ERROR');
+        err.status = 400;
+        err.details = Object.values(error.errors).map(e => e.message);
+        throw err;
+      }
+      throw error;
+    }
   }
 };
