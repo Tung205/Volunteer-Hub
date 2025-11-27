@@ -1,16 +1,37 @@
 import express from 'express';
 import { EventController } from '../controllers/event.controller.js';
 import { isAuthenticated, hasRole } from '../middlewares/auth.middleware.js';
+import { validate } from '../middlewares/validate.middleware.js';
+import { 
+  getEventsQuerySchema,
+  suggestionsQuerySchema,
+  eventIdParamSchema,
+  createEventSchema
+} from '../validations/event.validation.js';
 
 const router = express.Router();
 
 // API CRUD sự kiện (MANAGER)
-router.post('/', isAuthenticated, hasRole('MANAGER', 'ADMIN'), EventController.createEvent);
+router.post('/', 
+  isAuthenticated, 
+  hasRole('MANAGER', 'ADMIN'), 
+  validate(createEventSchema),
+  EventController.createEvent
+);
 
 // API tìm kiếm/ hiển thị sự kiện (PUBLIC)
-router.get('/suggestions', EventController.getSuggestions);
+router.get('/suggestions', 
+  validate(suggestionsQuerySchema, 'query'), 
+  EventController.getSuggestions
+);
 router.get('/highlighted', EventController.getHighlightedEvents);
-router.get('/:id', EventController.getEventById);
-router.get('/', EventController.getEvents);
+router.get('/:id', 
+  validate(eventIdParamSchema, 'params'), 
+  EventController.getEventById
+);
+router.get('/', 
+  validate(getEventsQuerySchema, 'query'), 
+  EventController.getEvents
+);
 
 export default router;
