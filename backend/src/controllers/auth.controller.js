@@ -14,7 +14,7 @@ const loginSchema = Joi.object({
   password: Joi.string().required(),
   recaptcha: Joi.string().required()
 });
-const RECAPTCHA_SECRET_KEY= "6LePIAosAAAAAFowdKKnS0aIkyozKqjRZdmizDvU";
+
 export const AuthController = {
   async register(req, res) {
     // validate đơn giản
@@ -38,21 +38,26 @@ export const AuthController = {
     const {recaptcha} = value;
     try {
       console.log("reCAPTCHA token:", recaptcha);
-      const response = await axios.post(
-        `https://www.google.com/recaptcha/api/siteverify`,
-        null,
-        {
-          params: {
-            // secret: process.env.RECAPTCHA_SECRET_KEY,
-            secret: RECAPTCHA_SECRET_KEY,
-            response: recaptcha,
-          },
-        }
-      );
-      console.log("reCAPTCHA verify result:", response.data);
 
-      if (!response.data.success) {
-        return res.status(400).json({ error: "INVALID_RECAPTCHA" });
+      // Bypass reCAPTCHA if in development mode
+      if (process.env.NODE_ENV === "development") {
+        console.log("Development mode: Skipping reCAPTCHA verification");
+      } else {
+        const response = await axios.post(
+          `https://www.google.com/recaptcha/api/siteverify`,
+          null,
+          {
+            params: {
+              secret: process.env.RECAPTCHA_SECRET_KEY,
+              response: recaptcha,
+            },
+          }
+        );
+        console.log("reCAPTCHA verify result:", response.data);
+
+        if (!response.data.success) {
+          return res.status(400).json({ error: "INVALID_RECAPTCHA" });
+        }
       }
     } catch (err) {
       console.error("reCAPTCHA error:", err);
@@ -68,4 +73,3 @@ export const AuthController = {
     }
   }
 };
-

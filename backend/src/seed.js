@@ -12,6 +12,14 @@ import { Event } from './models/event.model.js';
 const seedRouter = express.Router();
 
 seedRouter.post('/seed', async (req, res) => {
+  // Only allow in development mode
+  if (process.env.NODE_ENV !== 'development') {
+    return res.status(403).json({ 
+      error: 'FORBIDDEN', 
+      message: 'Seed endpoint is only available in development mode' 
+    });
+  }
+
   try {
     // Tạo user mẫu
     const hashedPassword = await bcrypt.hash('123456', 10);
@@ -134,6 +142,14 @@ seedRouter.post('/seed', async (req, res) => {
 
 // Endpoint để xóa tất cả dữ liệu test
 seedRouter.delete('/seed', async (req, res) => {
+  // Only allow in development mode
+  if (process.env.NODE_ENV !== 'development') {
+    return res.status(403).json({ 
+      error: 'FORBIDDEN', 
+      message: 'Seed endpoint is only available in development mode' 
+    });
+  }
+
   try {
     const users = await User.find({ 
       email: { $in: ['admin@test.com', 'manager@test.com'] } 

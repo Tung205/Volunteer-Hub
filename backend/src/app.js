@@ -5,7 +5,6 @@ import morgan from 'morgan';
 
 import authRoutes from './routes/auth.routes.js';
 import eventRoutes from './routes/event.routes.js';
-import seedRouter from './seed.js'; // DEV
 
 const app = express();
 app.use(helmet());
@@ -16,7 +15,15 @@ app.use(morgan('dev'));
 app.get('/health', (_req, res) => res.json({ ok: true }));
 app.use('/auth', authRoutes);
 app.use('/api/events', eventRoutes);
-app.use('/api', seedRouter); // DEV
+
+// DEV ONLY: Seed endpoint
+if (process.env.NODE_ENV === 'development') {
+  import('./seed.js').then(module => {
+    app.use('/api', module.default);
+    console.log('🌱 Seed endpoints enabled (development mode)');
+  });
+}
+
 // add example event :
 // curl -X POST http://localhost:8080/api/seed
 
