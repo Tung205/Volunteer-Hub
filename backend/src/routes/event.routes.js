@@ -1,12 +1,13 @@
 import express from 'express';
 import { EventController } from '../controllers/event.controller.js';
-import { isAuthenticated, hasRole } from '../middlewares/auth.middleware.js';
+import { isAuthenticated, hasRole, canModifyEvent } from '../middlewares/auth.middleware.js';
 import { validate } from '../middlewares/validate.middleware.js';
 import { 
   getEventsQuerySchema,
   suggestionsQuerySchema,
   eventIdParamSchema,
-  createEventSchema
+  createEventSchema,
+  updateEventSchema
 } from '../validations/event.validation.js';
 
 const router = express.Router();
@@ -17,6 +18,15 @@ router.post('/',
   hasRole('MANAGER', 'ADMIN'), 
   validate(createEventSchema),
   EventController.createEvent
+);
+
+router.put('/:id',
+  isAuthenticated,
+  hasRole('MANAGER', 'ADMIN'),
+  canModifyEvent,
+  validate(eventIdParamSchema, 'params'),
+  validate(updateEventSchema),
+  EventController.updateEvent
 );
 
 // API tìm kiếm/ hiển thị sự kiện (PUBLIC)

@@ -73,5 +73,35 @@ export const EventController = {
       console.error(e);
       return res.status(500).json({ error: 'INTERNAL' });
     }
+  },
+
+  // PUT /api/events/:id - Cập nhật sự kiện (MANAGER/ADMIN only, must be owner or admin)
+  async updateEvent(req, res) {
+    try {
+      const eventId = req.params.id;
+      const updateData = req.body; // Đã validated bởi middleware
+      const currentEvent = req.event; // Từ canModifyEvent middleware
+      
+      const updatedEvent = await EventService.updateEvent(
+        eventId, 
+        updateData, 
+        currentEvent
+      );
+      
+      return res.status(200).json({
+        message: 'Cập nhật sự kiện thành công',
+        event: updatedEvent
+      });
+      
+    } catch (e) {
+      if (e.status) {
+        return res.status(e.status).json({ 
+          error: e.message,
+          details: e.details 
+        });
+      }
+      console.error('updateEvent error:', e);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
   }
 };

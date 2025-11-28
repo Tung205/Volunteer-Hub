@@ -201,5 +201,105 @@ export const EventService = {
       }
       throw error;
     }
+  },
+
+  // UPDATE EVENT
+  async updateEvent(eventId, updateData, currentEvent) {
+    try {
+      // 1. Lọc bỏ các fields không được phép update
+      const protectedFields = [
+        'organizerId', 
+        'organizerName', 
+        'currentParticipants',
+        'createdAt',
+        'updatedAt',
+        '_id'
+      ];
+      
+      protectedFields.forEach(field => {
+        delete updateData[field];
+      });
+      
+      // 2. Validate business rules
+      
+      // Rule 1: Nếu update maxParticipants, phải >= currentParticipants
+      if (updateData.maxParticipants !== undefined) {
+        if (updateData.maxParticipants < currentEvent.currentParticipants) {
+          const err = new Error('INVALID_CAPACITY');
+          err.status = 400;
+          err.details = `Số lượng tối đa (${updateData.maxParticipants}) không thể nhỏ hơn số người đã đăng ký (${currentEvent.currentParticipants})`;
+          throw err;
+        }
+      }
+      
+      // Rule 2: Nếu update startTime, phải check với endTime
+      if (updateData.startTime && currentEvent.endTime) {
+        if (new Date(updateData.startTime) >= new Date(currentEvent.endTime)) {
+          const err = new Error('INVALID_TIME');
+          err.status = 400;
+          err.details = 'Thời gian bắt đầu phải trước thời gian kết thúc';
+          throw err;
+        }
+      }
+      
+      // Rule 3: Nếu update endTime, phải check với startTime
+      if (updateData.endTime) {
+        const startTime = updateData.startTime || currentEvent.startTime;
+        if (new Date(updateData.endTime) <= new Date(startTime)) {
+          const err = new Error('INVALID_TIME');
+          err.status = 400;
+          err.details = 'Thời gian kết thúc phải sau thời gian bắt đầu';
+          throw err;
+        }
+      }
+      
+      // Rule 4: Nếu đổi status từ OPEN → CLOSED, check đã có người đăng ký
+      if (updateData.status === 'CLOSED' && currentEvent.status === 'OPEN') {
+        if (currentEvent.currentParticipants === 0) {
+          const err = new Error('CANNOT_CLOSE_EMPTY_EVENT');
+          err.status = 400;
+          err.details = 'Không thể đóng sự kiện chưa có người đăng ký';
+          throw err;
+        }
+      }
+      
+      // 3. Update trong database
+      const updatedEvent = await Event.findByIdAndUpdate(
+        eventId,
+        { 
+          $set: updateData
+        },
+        { 
+          new: true,  // Return document sau khi update
+          runValidators: true  // Chạy mongoose validators
+        }
+      )
+      .populate('organizerId', 'name email')
+      .lean();
+      
+      if (!updatedEvent) {
+        const err = new Error('EVENT_NOT_FOUND');
+        err.status = 404;
+        throw err;
+      }
+      
+      return updatedEvent;
+      
+    } catch (error) {
+      // Re-throw custom errors
+      if (error.status) {
+        throw error;
+      }
+      
+      // Handle mongoose validation errors
+      if (error.name === 'ValidationError') {
+        const err = new Error('VALIDATION_ERROR');
+        err.status = 400;
+        err.details = Object.values(error.errors).map(e => e.message);
+        throw err;
+      }
+      
+      throw error;
+    }
   }
 };

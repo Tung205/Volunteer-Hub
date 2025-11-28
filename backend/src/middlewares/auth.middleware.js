@@ -95,13 +95,21 @@ export const canModifyEvent = async (req, res, next) => {
     }
     
     // Check permission
-    const isOwner = event.managerId.toString() === userId;
+    const isOwner = event.organizerId.toString() === userId;
     const isAdmin = userRoles.includes('ADMIN');
     
     if (!isOwner && !isAdmin) {
       return res.status(403).json({ 
         error: 'FORBIDDEN', 
         message: 'Bạn không có quyền thao tác với sự kiện này' 
+      });
+    }
+    
+    // Check if event can be modified (not CLOSED or CANCELLED)
+    if (event.status === 'CLOSED' || event.status === 'CANCELLED') {
+      return res.status(400).json({
+        error: 'EVENT_NOT_EDITABLE',
+        message: `Không thể sửa sự kiện đã ${event.status === 'CLOSED' ? 'đóng' : 'hủy'}`
       });
     }
     
