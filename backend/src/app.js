@@ -5,6 +5,7 @@ import morgan from 'morgan';
 
 import authRoutes from './routes/auth.routes.js';
 import eventRoutes from './routes/event.routes.js';
+import registrationRoutes from './routes/registration.routes.js';
 
 const app = express();
 app.use(helmet());
@@ -15,6 +16,7 @@ app.use(morgan('dev'));
 app.get('/health', (_req, res) => res.json({ ok: true }));
 app.use('/auth', authRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/registrations', registrationRoutes);
 
 // DEV ONLY: Seed endpoint
 if (process.env.NODE_ENV === 'development') {
