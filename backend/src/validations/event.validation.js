@@ -4,7 +4,7 @@ import Joi from 'joi';
 export const getEventsQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(50).default(6),
-  status: Joi.string().valid('PENDING', 'APPROVED', 'REJECTED', 'OPEN', 'CLOSED', 'CANCELLED'),
+  status: Joi.string().valid('PENDING', 'OPENED', 'REJECTED', 'CLOSED', 'CANCELLED'),
   location: Joi.string(),
   search: Joi.string().max(100),
   startDate: Joi.date(),
@@ -72,7 +72,7 @@ export const updateEventSchema = Joi.object({
     'date.greater': 'Thời gian kết thúc phải sau thời gian bắt đầu'
   }),
   maxParticipants: Joi.number().integer().min(0),
-  status: Joi.string().valid('PENDING', 'OPEN', 'CLOSED', 'CANCELLED'),  // Không cho set APPROVED/REJECTED qua update
+  status: Joi.string().valid('PENDING', 'OPENED', 'CLOSED', 'CANCELLED'),  // Không cho set OPENED/REJECTED qua update
   coverImageUrl: Joi.string().uri().allow('')
 }).min(1).messages({
   'object.min': 'Phải có ít nhất một trường để cập nhật'

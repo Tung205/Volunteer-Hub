@@ -133,9 +133,9 @@ export const EventService = {
   async findHighlightedEvents(limit = 6) {
     const now = new Date();
     
-    // Find OPEN events that haven't started yet
+    // Find OPENED events that haven't started yet
     const events = await Event.find({
-      status: 'OPEN',
+      status: 'OPENED',
       startTime: { $gte: now }
     })
     .sort({
@@ -162,7 +162,7 @@ export const EventService = {
     const events = await Event.find(
       {
         $text: { $search: sanitizedQuery },
-        status: 'OPEN'
+        status: 'OPENED'
       },
       {
         score: { $meta: 'textScore' } // Add relevance score
@@ -253,8 +253,8 @@ export const EventService = {
         }
       }
       
-      // Rule 4: Nếu đổi status từ OPEN → CLOSED, check đã có người đăng ký
-      if (updateData.status === 'CLOSED' && currentEvent.status === 'OPEN') {
+      // Rule 4: Nếu đổi status từ OPENED → CLOSED, check đã có người đăng ký
+      if (updateData.status === 'CLOSED' && currentEvent.status === 'OPENED') {
         if (currentEvent.currentParticipants === 0) {
           const err = new Error('CANNOT_CLOSE_EMPTY_EVENT');
           err.status = 400;
@@ -342,7 +342,7 @@ export const EventService = {
 
   /**
    * ADMIN duyệt event
-   * PENDING → APPROVED
+   * PENDING → OPENED
    */
   async approveEvent(eventId, adminId) {
     const event = await Event.findById(eventId).lean();
@@ -365,7 +365,7 @@ export const EventService = {
       eventId,
       { 
         $set: { 
-          status: 'APPROVED',
+          status: 'OPENED',
           approvedBy: adminId,
           approvedAt: new Date()
         }
@@ -423,36 +423,7 @@ export const EventService = {
     return updatedEvent;
   },
 
-  /**
-   * MANAGER publish event đã được duyệt
-   * APPROVED → OPEN
-   */
-  async publishEvent(eventId, currentEvent) {
-    // Validate: chỉ APPROVED mới được publish
-    if (currentEvent.status !== 'APPROVED') {
-      const err = new Error('INVALID_STATUS_TRANSITION');
-      err.status = 400;
-      if (currentEvent.status === 'PENDING') {
-        err.details = 'Sự kiện đang chờ duyệt. Vui lòng đợi ADMIN phê duyệt.';
-      } else if (currentEvent.status === 'REJECTED') {
-        err.details = `Sự kiện đã bị từ chối: ${currentEvent.rejectionReason || 'Không có lý do'}. Vui lòng chỉnh sửa và submit lại.`;
-      } else {
-        err.details = `Không thể publish sự kiện đang ở trạng thái ${currentEvent.status}`;
-      }
-      throw err;
-    }
-    
-    const updatedEvent = await Event.findByIdAndUpdate(
-      eventId,
-      { $set: { status: 'OPEN' } },
-      { new: true }
-    )
-    .populate('organizerId', 'name email')
-    .populate('approvedBy', 'name email')
-    .lean();
-    
-    return updatedEvent;
-  },
+
 
   /**
    * Lấy danh sách events chờ duyệt (ADMIN)

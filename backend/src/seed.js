@@ -58,7 +58,7 @@ seedRouter.post('/seed', async (req, res) => {
         organizerName: user.name,
         maxParticipants: 50,
         currentParticipants: 15,
-        status: 'OPEN',
+        status: 'OPENED',
         coverImageUrl: 'https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=800'
       },
       {
@@ -72,7 +72,7 @@ seedRouter.post('/seed', async (req, res) => {
         organizerName: manager.name,
         maxParticipants: 30,
         currentParticipants: 8,
-        status: 'OPEN',
+        status: 'OPENED',
         coverImageUrl: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800'
       },
       {
@@ -86,7 +86,7 @@ seedRouter.post('/seed', async (req, res) => {
         organizerName: user.name,
         maxParticipants: 20,
         currentParticipants: 18,
-        status: 'OPEN',
+        status: 'OPENED',
         coverImageUrl: 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800'
       },
       {
@@ -100,7 +100,7 @@ seedRouter.post('/seed', async (req, res) => {
         organizerName: manager.name,
         maxParticipants: 15,
         currentParticipants: 10,
-        status: 'OPEN',
+        status: 'OPENED',
         coverImageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800'
       }
     ];

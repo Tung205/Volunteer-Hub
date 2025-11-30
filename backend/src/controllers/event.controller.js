@@ -165,25 +165,6 @@ export const EventController = {
     }
   },
 
-  // PATCH /api/events/:id/publish - MANAGER publish event đã được duyệt
-  async publishEvent(req, res) {
-    try {
-      const eventId = req.params.id;
-      const currentEvent = req.event; // Từ canModifyEvent middleware
-      
-      const updatedEvent = await EventService.publishEvent(eventId, currentEvent);
-      
-      return res.status(200).json({
-        message: 'Đã công khai sự kiện thành công',
-        event: updatedEvent
-      });
-    } catch (e) {
-      if (e.status) return res.status(e.status).json({ error: e.message, details: e.details });
-      console.error('publishEvent error:', e);
-      return res.status(500).json({ error: 'INTERNAL' });
-    }
-  },
-
   // GET /api/events/pending - ADMIN lấy danh sách events chờ duyệt
   async getPendingEvents(req, res) {
     try {

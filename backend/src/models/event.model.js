@@ -51,7 +51,7 @@ const EventSchema = new mongoose.Schema(
     // Trạng thái sự kiện
     status: {
       type: String,
-      enum: ['PENDING', 'APPROVED', 'REJECTED', 'OPEN', 'CLOSED', 'CANCELLED'],
+      enum: ['PENDING', 'OPENED', 'REJECTED', 'CLOSED', 'CANCELLED'],
       default: 'PENDING',
       index: true,
     },

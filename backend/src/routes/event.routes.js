@@ -42,15 +42,6 @@ router.patch('/:id/submit',
   EventController.submitForReview
 );
 
-// MANAGER: Publish event đã được duyệt (APPROVED → OPEN)
-router.patch('/:id/publish',
-  isAuthenticated,
-  hasRole('MANAGER', 'ADMIN'),
-  canModifyEvent,
-  validate(eventIdParamSchema, 'params'),
-  EventController.publishEvent
-);
-
 // ADMIN: Lấy danh sách events chờ duyệt (phải đặt trước /:id)
 router.get('/pending',
   isAuthenticated,
@@ -58,7 +49,7 @@ router.get('/pending',
   EventController.getPendingEvents
 );
 
-// ADMIN: Duyệt event (PENDING → APPROVED)
+// ADMIN: Duyệt event (PENDING → OPENED)
 router.patch('/:id/approve',
   isAuthenticated,
   hasRole('ADMIN'),
