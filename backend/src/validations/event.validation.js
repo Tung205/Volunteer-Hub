@@ -4,7 +4,7 @@ import Joi from 'joi';
 export const getEventsQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(50).default(6),
-  status: Joi.string().valid('DRAFT', 'OPEN', 'CLOSED', 'CANCELLED'),
+  status: Joi.string().valid('PENDING', 'APPROVED', 'REJECTED', 'OPEN', 'CLOSED', 'CANCELLED'),
   location: Joi.string(),
   search: Joi.string().max(100),
   startDate: Joi.date(),
@@ -53,7 +53,6 @@ export const createEventSchema = Joi.object({
     'date.greater': 'Thời gian kết thúc phải sau thời gian bắt đầu'
   }),
   maxParticipants: Joi.number().integer().min(0).default(0),
-  status: Joi.string().valid('DRAFT', 'OPEN').default('OPEN'),
   coverImageUrl: Joi.string().uri().allow('').default('')
 });
 
@@ -73,8 +72,15 @@ export const updateEventSchema = Joi.object({
     'date.greater': 'Thời gian kết thúc phải sau thời gian bắt đầu'
   }),
   maxParticipants: Joi.number().integer().min(0),
-  status: Joi.string().valid('DRAFT', 'OPEN', 'CLOSED', 'CANCELLED'),
+  status: Joi.string().valid('PENDING', 'OPEN', 'CLOSED', 'CANCELLED'),  // Không cho set APPROVED/REJECTED qua update
   coverImageUrl: Joi.string().uri().allow('')
 }).min(1).messages({
   'object.min': 'Phải có ít nhất một trường để cập nhật'
+});
+
+// Body validation cho PATCH /api/events/:id/reject (ADMIN)
+export const rejectEventSchema = Joi.object({
+  reason: Joi.string().max(500).messages({
+    'string.max': 'Lý do từ chối không quá 500 ký tự'
+  })
 });

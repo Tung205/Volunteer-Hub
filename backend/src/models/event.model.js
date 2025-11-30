@@ -51,9 +51,22 @@ const EventSchema = new mongoose.Schema(
     // Trạng thái sự kiện
     status: {
       type: String,
-      enum: ['DRAFT', 'OPEN', 'CLOSED', 'CANCELLED'],
-      default: 'OPEN',
+      enum: ['PENDING', 'APPROVED', 'REJECTED', 'OPEN', 'CLOSED', 'CANCELLED'],
+      default: 'PENDING',
       index: true,
+    },
+
+    // Thông tin duyệt sự kiện (ADMIN)
+    approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    approvedAt: {
+      type: Date,
+    },
+    rejectionReason: {
+      type: String,
+      maxlength: 500,
     },
 
     // Hiển thị trên giao diện

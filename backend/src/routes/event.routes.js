@@ -7,12 +7,14 @@ import {
   suggestionsQuerySchema,
   eventIdParamSchema,
   createEventSchema,
-  updateEventSchema
+  updateEventSchema,
+  rejectEventSchema
 } from '../validations/event.validation.js';
 
 const router = express.Router();
 
-// API CRUD sự kiện (MANAGER)
+// ==================== CRUD SỰ KIỆN (MANAGER) ====================
+
 router.post('/', 
   isAuthenticated, 
   hasRole('MANAGER', 'ADMIN'), 
@@ -29,7 +31,51 @@ router.put('/:id',
   EventController.updateEvent
 );
 
-// API tìm kiếm/ hiển thị sự kiện (PUBLIC)
+// ==================== APPROVAL WORKFLOW ====================
+
+// MANAGER: Resubmit event bị từ chối (REJECTED → PENDING)
+router.patch('/:id/submit',
+  isAuthenticated,
+  hasRole('MANAGER', 'ADMIN'),
+  canModifyEvent,
+  validate(eventIdParamSchema, 'params'),
+  EventController.submitForReview
+);
+
+// MANAGER: Publish event đã được duyệt (APPROVED → OPEN)
+router.patch('/:id/publish',
+  isAuthenticated,
+  hasRole('MANAGER', 'ADMIN'),
+  canModifyEvent,
+  validate(eventIdParamSchema, 'params'),
+  EventController.publishEvent
+);
+
+// ADMIN: Lấy danh sách events chờ duyệt (phải đặt trước /:id)
+router.get('/pending',
+  isAuthenticated,
+  hasRole('ADMIN'),
+  EventController.getPendingEvents
+);
+
+// ADMIN: Duyệt event (PENDING → APPROVED)
+router.patch('/:id/approve',
+  isAuthenticated,
+  hasRole('ADMIN'),
+  validate(eventIdParamSchema, 'params'),
+  EventController.approveEvent
+);
+
+// ADMIN: Từ chối event (PENDING → REJECTED)
+router.patch('/:id/reject',
+  isAuthenticated,
+  hasRole('ADMIN'),
+  validate(eventIdParamSchema, 'params'),
+  validate(rejectEventSchema),
+  EventController.rejectEvent
+);
+
+// ==================== PUBLIC ROUTES ====================
 router.get('/suggestions', 
   validate(suggestionsQuerySchema, 'query'), 
   EventController.getSuggestions

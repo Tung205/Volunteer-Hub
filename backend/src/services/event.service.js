@@ -301,5 +301,186 @@ export const EventService = {
       
       throw error;
     }
+  },
+
+  // ==================== APPROVAL WORKFLOW ====================
+
+  /**
+   * MANAGER submit lại event sau khi bị từ chối
+   * REJECTED → PENDING
+   */
+  async submitForReview(eventId, currentEvent) {
+    // Validate: chỉ REJECTED mới được resubmit (vì tạo mới đã tự động PENDING)
+    if (currentEvent.status !== 'REJECTED') {
+      const err = new Error('INVALID_STATUS_TRANSITION');
+      err.status = 400;
+      err.details = `Chỉ có thể submit lại sự kiện đã bị từ chối (REJECTED). Hiện tại: ${currentEvent.status}`;
+      throw err;
+    }
+    
+    // Validate: event phải có đủ thông tin
+    const requiredFields = ['title', 'description', 'location', 'startTime'];
+    const missingFields = requiredFields.filter(f => !currentEvent[f]);
+    if (missingFields.length > 0) {
+      const err = new Error('INCOMPLETE_EVENT');
+      err.status = 400;
+      err.details = `Thiếu thông tin bắt buộc: ${missingFields.join(', ')}`;
+      throw err;
+    }
+    
+    const updatedEvent = await Event.findByIdAndUpdate(
+      eventId,
+      { 
+        $set: { status: 'PENDING' },
+        $unset: { rejectionReason: 1 } // Clear rejection reason if resubmitting
+      },
+      { new: true }
+    ).populate('organizerId', 'name email').lean();
+    
+    return updatedEvent;
+  },
+
+  /**
+   * ADMIN duyệt event
+   * PENDING → APPROVED
+   */
+  async approveEvent(eventId, adminId) {
+    const event = await Event.findById(eventId).lean();
+    
+    if (!event) {
+      const err = new Error('EVENT_NOT_FOUND');
+      err.status = 404;
+      throw err;
+    }
+    
+    // Validate: chỉ PENDING mới được approve
+    if (event.status !== 'PENDING') {
+      const err = new Error('INVALID_STATUS_TRANSITION');
+      err.status = 400;
+      err.details = `Chỉ có thể duyệt sự kiện đang chờ duyệt (PENDING). Hiện tại: ${event.status}`;
+      throw err;
+    }
+    
+    const updatedEvent = await Event.findByIdAndUpdate(
+      eventId,
+      { 
+        $set: { 
+          status: 'APPROVED',
+          approvedBy: adminId,
+          approvedAt: new Date()
+        }
+      },
+      { new: true }
+    )
+    .populate('organizerId', 'name email')
+    .populate('approvedBy', 'name email')
+    .lean();
+    
+    // TODO: Gửi notification cho MANAGER
+    
+    return updatedEvent;
+  },
+
+  /**
+   * ADMIN từ chối event
+   * PENDING → REJECTED
+   */
+  async rejectEvent(eventId, adminId, reason = '') {
+    const event = await Event.findById(eventId).lean();
+    
+    if (!event) {
+      const err = new Error('EVENT_NOT_FOUND');
+      err.status = 404;
+      throw err;
+    }
+    
+    // Validate: chỉ PENDING mới được reject
+    if (event.status !== 'PENDING') {
+      const err = new Error('INVALID_STATUS_TRANSITION');
+      err.status = 400;
+      err.details = `Chỉ có thể từ chối sự kiện đang chờ duyệt (PENDING). Hiện tại: ${event.status}`;
+      throw err;
+    }
+    
+    const updatedEvent = await Event.findByIdAndUpdate(
+      eventId,
+      { 
+        $set: { 
+          status: 'REJECTED',
+          approvedBy: adminId,
+          approvedAt: new Date(),
+          rejectionReason: reason || 'Không có lý do cụ thể'
+        }
+      },
+      { new: true }
+    )
+    .populate('organizerId', 'name email')
+    .populate('approvedBy', 'name email')
+    .lean();
+    
+    // TODO: Gửi notification cho MANAGER với lý do từ chối
+    
+    return updatedEvent;
+  },
+
+  /**
+   * MANAGER publish event đã được duyệt
+   * APPROVED → OPEN
+   */
+  async publishEvent(eventId, currentEvent) {
+    // Validate: chỉ APPROVED mới được publish
+    if (currentEvent.status !== 'APPROVED') {
+      const err = new Error('INVALID_STATUS_TRANSITION');
+      err.status = 400;
+      if (currentEvent.status === 'PENDING') {
+        err.details = 'Sự kiện đang chờ duyệt. Vui lòng đợi ADMIN phê duyệt.';
+      } else if (currentEvent.status === 'REJECTED') {
+        err.details = `Sự kiện đã bị từ chối: ${currentEvent.rejectionReason || 'Không có lý do'}. Vui lòng chỉnh sửa và submit lại.`;
+      } else {
+        err.details = `Không thể publish sự kiện đang ở trạng thái ${currentEvent.status}`;
+      }
+      throw err;
+    }
+    
+    const updatedEvent = await Event.findByIdAndUpdate(
+      eventId,
+      { $set: { status: 'OPEN' } },
+      { new: true }
+    )
+    .populate('organizerId', 'name email')
+    .populate('approvedBy', 'name email')
+    .lean();
+    
+    return updatedEvent;
+  },
+
+  /**
+   * Lấy danh sách events chờ duyệt (ADMIN)
+   */
+  async findPendingEvents(options = {}) {
+    const { page = 1, limit = 10 } = options;
+    const skip = (page - 1) * limit;
+    
+    const [events, total] = await Promise.all([
+      Event.find({ status: 'PENDING' })
+        .sort({ createdAt: 1 }) // Oldest first (FIFO)
+        .skip(skip)
+        .limit(limit)
+        .populate('organizerId', 'name email')
+        .lean(),
+      Event.countDocuments({ status: 'PENDING' })
+    ]);
+    
+    return {
+      events,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1
+      }
+    };
   }
 };

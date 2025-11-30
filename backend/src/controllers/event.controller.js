@@ -103,5 +103,99 @@ export const EventController = {
       console.error('updateEvent error:', e);
       return res.status(500).json({ error: 'INTERNAL' });
     }
+  },
+
+  // ==================== APPROVAL WORKFLOW ====================
+
+  // PATCH /api/events/:id/submit - MANAGER submit event để ADMIN duyệt
+  async submitForReview(req, res) {
+    try {
+      const eventId = req.params.id;
+      const currentEvent = req.event; // Từ canModifyEvent middleware
+      
+      const updatedEvent = await EventService.submitForReview(eventId, currentEvent);
+      
+      return res.status(200).json({
+        message: 'Đã gửi sự kiện để duyệt. Vui lòng chờ ADMIN phê duyệt.',
+        event: updatedEvent
+      });
+    } catch (e) {
+      if (e.status) return res.status(e.status).json({ error: e.message, details: e.details });
+      console.error('submitForReview error:', e);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
+  },
+
+  // PATCH /api/events/:id/approve - ADMIN duyệt event
+  async approveEvent(req, res) {
+    try {
+      const eventId = req.params.id;
+      const adminId = req.user.id;
+      
+      const updatedEvent = await EventService.approveEvent(eventId, adminId);
+      
+      return res.status(200).json({
+        message: 'Đã duyệt sự kiện thành công',
+        event: updatedEvent
+      });
+    } catch (e) {
+      if (e.status) return res.status(e.status).json({ error: e.message, details: e.details });
+      console.error('approveEvent error:', e);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
+  },
+
+  // PATCH /api/events/:id/reject - ADMIN từ chối event
+  async rejectEvent(req, res) {
+    try {
+      const eventId = req.params.id;
+      const adminId = req.user.id;
+      const { reason } = req.body;
+      
+      const updatedEvent = await EventService.rejectEvent(eventId, adminId, reason);
+      
+      return res.status(200).json({
+        message: 'Đã từ chối sự kiện',
+        event: updatedEvent
+      });
+    } catch (e) {
+      if (e.status) return res.status(e.status).json({ error: e.message, details: e.details });
+      console.error('rejectEvent error:', e);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
+  },
+
+  // PATCH /api/events/:id/publish - MANAGER publish event đã được duyệt
+  async publishEvent(req, res) {
+    try {
+      const eventId = req.params.id;
+      const currentEvent = req.event; // Từ canModifyEvent middleware
+      
+      const updatedEvent = await EventService.publishEvent(eventId, currentEvent);
+      
+      return res.status(200).json({
+        message: 'Đã công khai sự kiện thành công',
+        event: updatedEvent
+      });
+    } catch (e) {
+      if (e.status) return res.status(e.status).json({ error: e.message, details: e.details });
+      console.error('publishEvent error:', e);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
+  },
+
+  // GET /api/events/pending - ADMIN lấy danh sách events chờ duyệt
+  async getPendingEvents(req, res) {
+    try {
+      const { page, limit } = req.query;
+      const result = await EventService.findPendingEvents({ 
+        page: parseInt(page) || 1, 
+        limit: parseInt(limit) || 10 
+      });
+      return res.json(result);
+    } catch (e) {
+      console.error('getPendingEvents error:', e);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
   }
 };
