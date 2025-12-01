@@ -125,3 +125,83 @@ export const canModifyEvent = async (req, res, next) => {
     });
   }
 };
+/**
+ * Middleware kiểm tra user có quyền quản lý registrations của event
+ * - Owner của event (organizerId === userId)
+ * - ADMIN (có quyền với mọi event)
+ * Dùng cho: GET/PATCH registrations của 1 event
+ */
+export const canManageRegistrations = async (req, res, next) => {
+  try {
+    // eventId có thể từ params.eventId (GET) hoặc từ registration lookup (PATCH)
+    let eventId = req.params.eventId;
+    
+    // Nếu không có eventId trong params, có thể là route PATCH với regId
+    // Sẽ cần lookup registration để lấy eventId
+    if (!eventId && req.params.regId) {
+      const { Registration } = await import('../models/registration.model.js');
+      
+      if (!mongoose.Types.ObjectId.isValid(req.params.regId)) {
+        return res.status(400).json({ 
+          error: 'INVALID_REGISTRATION_ID', 
+          message: 'ID đăng ký không hợp lệ' 
+        });
+      }
+      
+      const registration = await Registration.findById(req.params.regId).lean();
+      
+      if (!registration) {
+        return res.status(404).json({ 
+          error: 'REGISTRATION_NOT_FOUND', 
+          message: 'Không tìm thấy đăng ký' 
+        });
+      }
+      
+      eventId = registration.eventId.toString();
+      req.registration = registration; // Attach for reuse
+    }
+    
+    const userId = req.user.id;
+    const userRoles = req.user.roles || [];
+    
+    // Validate eventId
+    if (!mongoose.Types.ObjectId.isValid(eventId)) {
+      return res.status(400).json({ 
+        error: 'INVALID_EVENT_ID', 
+        message: 'ID sự kiện không hợp lệ' 
+      });
+    }
+    
+    // Find event
+    const event = await Event.findById(eventId).lean();
+    
+    if (!event) {
+      return res.status(404).json({ 
+        error: 'EVENT_NOT_FOUND', 
+        message: 'Không tìm thấy sự kiện' 
+      });
+    }
+    
+    // Check permission: owner hoặc admin
+    const isOwner = event.organizerId.toString() === userId;
+    const isAdmin = userRoles.includes('ADMIN');
+    
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ 
+        error: 'FORBIDDEN', 
+        message: 'Bạn không có quyền quản lý đăng ký của sự kiện này' 
+      });
+    }
+    
+    // Attach event to request for reuse in controller
+    req.event = event;
+    
+    next();
+  } catch (error) {
+    console.error('canManageRegistrations error:', error);
+    return res.status(500).json({ 
+      error: 'INTERNAL', 
+      message: 'Lỗi kiểm tra quyền truy cập' 
+    });
+  }
+};

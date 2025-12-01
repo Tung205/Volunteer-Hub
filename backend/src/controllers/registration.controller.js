@@ -92,5 +92,81 @@ export const RegistrationController = {
       console.error('CancelRegistration error:', error);
       return res.status(500).json({ error: 'INTERNAL' });
     }
+  },
+
+  // ==================== MANAGER APIS ====================
+
+  // GET /api/registrations/event/:eventId - MANAGER xem danh sách TNV đã đăng ký
+  async getEventRegistrations(req, res) {
+    try {
+      const eventId = req.params.eventId;
+      
+      const registrations = await RegistrationService.getEventRegistrations(eventId);
+      
+      return res.status(200).json({
+        success: true,
+        data: registrations,
+        total: registrations.length,
+        event: req.event // Từ canManageRegistrations middleware
+      });
+    } catch (error) {
+      console.error('GetEventRegistrations error:', error);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
+  },
+
+  // PATCH /api/registrations/:regId/approve - MANAGER duyệt đăng ký TNV
+  async approveRegistration(req, res) {
+    try {
+      const regId = req.params.regId;
+      const managerId = req.user.id;
+      
+      const registration = await RegistrationService.approveRegistration(regId, managerId);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Đã duyệt đăng ký thành công',
+        data: registration
+      });
+    } catch (error) {
+      // Handle specific errors
+      if (error.status) {
+        return res.status(error.status).json({
+          error: error.message,
+          details: error.details
+        });
+      }
+      
+      console.error('ApproveRegistration error:', error);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
+  },
+
+  // PATCH /api/registrations/:regId/reject - MANAGER từ chối đăng ký TNV
+  async rejectRegistration(req, res) {
+    try {
+      const regId = req.params.regId;
+      const managerId = req.user.id;
+      const { reason } = req.body;
+      
+      const registration = await RegistrationService.rejectRegistration(regId, managerId, reason);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Đã từ chối đăng ký',
+        data: registration
+      });
+    } catch (error) {
+      // Handle specific errors
+      if (error.status) {
+        return res.status(error.status).json({
+          error: error.message,
+          details: error.details
+        });
+      }
+      
+      console.error('RejectRegistration error:', error);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
   }
 };

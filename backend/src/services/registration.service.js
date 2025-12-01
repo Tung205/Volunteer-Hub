@@ -230,5 +230,169 @@ export const RegistrationService = {
     } finally {
       session.endSession();
     }
+  },
+
+  /**
+   * MANAGER xem danh sách tình nguyện viên đã đăng ký sự kiện
+   * Populate volunteer info (name, email)
+   */
+  async getEventRegistrations(eventId) {
+    const registrations = await Registration.find({
+      eventId
+    })
+    .populate('volunteerId', 'name email dateOfBirth gender')
+    .populate('approvedBy', 'name email')
+    .sort({ registeredAt: -1 }) // Mới nhất trước
+    .lean();
+    
+    return registrations;
+  },
+
+  /**
+   * MANAGER duyệt đăng ký tình nguyện viên
+   * - Chỉ duyệt khi status = PENDING
+   * - Kiểm tra maxParticipants
+   * - Đổi status = APPROVED
+   * - Tăng currentParticipants
+   * - Lưu approvedBy
+   */
+  async approveRegistration(regId, managerId) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
+    try {
+      // 1. Tìm registration
+      const registration = await Registration.findById(regId).session(session);
+      
+      if (!registration) {
+        const err = new Error('REGISTRATION_NOT_FOUND');
+        err.status = 404;
+        err.details = 'Không tìm thấy đăng ký';
+        throw err;
+      }
+      
+      // 2. Kiểm tra status = PENDING
+      if (registration.status !== 'PENDING') {
+        const err = new Error('INVALID_STATUS');
+        err.status = 400;
+        err.details = `Chỉ có thể duyệt đăng ký đang chờ (PENDING). Hiện tại: ${registration.status}`;
+        throw err;
+      }
+      
+      // 3. Kiểm tra event
+      const event = await Event.findById(registration.eventId).session(session);
+      
+      if (!event) {
+        const err = new Error('EVENT_NOT_FOUND');
+        err.status = 404;
+        err.details = 'Không tìm thấy sự kiện';
+        throw err;
+      }
+      
+      // 4. Kiểm tra maxParticipants (chỉ tính APPROVED)
+      if (event.maxParticipants > 0) {
+        const approvedCount = await Registration.countDocuments({
+          eventId: event._id,
+          status: 'APPROVED'
+        }).session(session);
+        
+        if (approvedCount >= event.maxParticipants) {
+          const err = new Error('EVENT_FULL');
+          err.status = 400;
+          err.details = `Sự kiện đã đủ số lượng tham gia (${event.maxParticipants} người)`;
+          throw err;
+        }
+      }
+      
+      // 5. Cập nhật registration
+      registration.status = 'APPROVED';
+      registration.approvedBy = managerId;
+      await registration.save({ session });
+      
+      // 6. Tăng currentParticipants
+      await Event.findByIdAndUpdate(
+        event._id,
+        { $inc: { currentParticipants: 1 } },
+        { session }
+      );
+      
+      // Commit transaction
+      await session.commitTransaction();
+      
+      // Populate để trả về đầy đủ info
+      const result = await Registration.findById(regId)
+        .populate('volunteerId', 'name email')
+        .populate('approvedBy', 'name email')
+        .lean();
+      
+      return result;
+      
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
+  },
+
+  /**
+   * MANAGER từ chối đăng ký tình nguyện viên
+   * - Chỉ từ chối khi status = PENDING
+   * - Đổi status = REJECTED
+   * - Lưu approvedBy và rejectionReason
+   * - KHÔNG thay đổi currentParticipants
+   */
+  async rejectRegistration(regId, managerId, reason) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
+    try {
+      // 1. Tìm registration
+      const registration = await Registration.findById(regId).session(session);
+      
+      if (!registration) {
+        const err = new Error('REGISTRATION_NOT_FOUND');
+        err.status = 404;
+        err.details = 'Không tìm thấy đăng ký';
+        throw err;
+      }
+      
+      // 2. Kiểm tra status = PENDING
+      if (registration.status !== 'PENDING') {
+        const err = new Error('INVALID_STATUS');
+        err.status = 400;
+        err.details = `Chỉ có thể từ chối đăng ký đang chờ (PENDING). Hiện tại: ${registration.status}`;
+        throw err;
+      }
+      
+      // 3. Cập nhật registration
+      registration.status = 'REJECTED';
+      registration.approvedBy = managerId;
+      
+      // Lưu rejection reason vào schema nếu có field
+      // Note: Cần thêm field rejectionReason vào registration model nếu chưa có
+      if (reason) {
+        registration.set('rejectionReason', reason);
+      }
+      
+      await registration.save({ session });
+      
+      // Commit transaction
+      await session.commitTransaction();
+      
+      // Populate để trả về đầy đủ info
+      const result = await Registration.findById(regId)
+        .populate('volunteerId', 'name email')
+        .populate('approvedBy', 'name email')
+        .lean();
+      
+      return result;
+      
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
   }
 };

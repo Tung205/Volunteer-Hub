@@ -7,7 +7,8 @@ const registrationSchema = new mongoose.Schema({
   volunteerEmail: { type: String, default: '' },
   status:         { type: String, enum: ['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED', 'COMPLETED'], default: 'PENDING', index: true },
   registeredAt:   { type: Date, default: Date.now },
-  approvedBy:     { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  approvedBy:     { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  rejectionReason: { type: String, default: '', maxlength: 500 }
 }, { timestamps: true });
 
 // Một TNV không được đăng ký 2 lần vào 1 event
