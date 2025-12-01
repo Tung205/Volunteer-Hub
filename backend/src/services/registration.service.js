@@ -14,9 +14,6 @@ export const RegistrationService = {
    * - Không tăng currentParticipants (chỉ tính APPROVED)
    */
   async registerEvent(eventId, userId, userInfo) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
     try {
       // 1. Validate ObjectId
       if (!mongoose.Types.ObjectId.isValid(eventId)) {
@@ -27,7 +24,7 @@ export const RegistrationService = {
       }
       
       // 2. Kiểm tra event tồn tại
-      const event = await Event.findById(eventId).session(session);
+      const event = await Event.findById(eventId);
       if (!event) {
         const err = new Error('EVENT_NOT_FOUND');
         err.status = 404;
@@ -59,7 +56,7 @@ export const RegistrationService = {
       const existingRegistration = await Registration.findOne({
         eventId,
         volunteerId: userId
-      }).session(session);
+      });
       
       // Nếu đã đăng ký và không phải CANCELLED → không cho đăng ký lại
       if (existingRegistration && existingRegistration.status !== 'CANCELLED') {
@@ -74,7 +71,7 @@ export const RegistrationService = {
         const approvedCount = await Registration.countDocuments({
           eventId,
           status: 'APPROVED'
-        }).session(session);
+        });
         
         if (approvedCount >= event.maxParticipants) {
           const err = new Error('EVENT_FULL');
@@ -99,32 +96,26 @@ export const RegistrationService = {
             },
             $unset: { approvedBy: 1 } // Clear approvedBy nếu có
           },
-          { new: true, session }
+          { new: true }
         ).lean();
       } else {
         // 8. Tạo registration mới
-        const newRegistration = await Registration.create([{
+        const newRegistration = await Registration.create({
           eventId,
           volunteerId: userId,
           volunteerName: userInfo.name || '',
           volunteerEmail: userInfo.email || '',
           status: 'PENDING',
           registeredAt: new Date()
-        }], { session });
+        });
         
-        registration = newRegistration[0].toObject();
+        registration = newRegistration.toObject();
       }
-      
-      // Commit transaction
-      await session.commitTransaction();
       
       return registration;
       
     } catch (error) {
-      await session.abortTransaction();
       throw error;
-    } finally {
-      session.endSession();
     }
   },
 
@@ -150,9 +141,6 @@ export const RegistrationService = {
    * - Nếu đang APPROVED thì giảm currentParticipants
    */
   async cancelRegistration(eventId, userId) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
     try {
       // 1. Validate ObjectId
       if (!mongoose.Types.ObjectId.isValid(eventId)) {
@@ -166,7 +154,7 @@ export const RegistrationService = {
       const registration = await Registration.findOne({
         eventId,
         volunteerId: userId
-      }).session(session);
+      });
       
       if (!registration) {
         const err = new Error('REGISTRATION_NOT_FOUND');
@@ -184,7 +172,7 @@ export const RegistrationService = {
       }
       
       // 4. Kiểm tra event
-      const event = await Event.findById(eventId).session(session);
+      const event = await Event.findById(eventId);
       if (!event) {
         const err = new Error('EVENT_NOT_FOUND');
         err.status = 404;
@@ -208,27 +196,20 @@ export const RegistrationService = {
       const wasApproved = registration.status === 'APPROVED';
       
       registration.status = 'CANCELLED';
-      await registration.save({ session });
+      await registration.save();
       
       // 7. Nếu đang APPROVED → giảm currentParticipants
       if (wasApproved) {
         await Event.findByIdAndUpdate(
           eventId,
-          { $inc: { currentParticipants: -1 } },
-          { session }
+          { $inc: { currentParticipants: -1 } }
         );
       }
-      
-      // Commit transaction
-      await session.commitTransaction();
       
       return registration.toObject();
       
     } catch (error) {
-      await session.abortTransaction();
       throw error;
-    } finally {
-      session.endSession();
     }
   },
 
@@ -257,12 +238,9 @@ export const RegistrationService = {
    * - Lưu approvedBy
    */
   async approveRegistration(regId, managerId) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
     try {
       // 1. Tìm registration
-      const registration = await Registration.findById(regId).session(session);
+      const registration = await Registration.findById(regId);
       
       if (!registration) {
         const err = new Error('REGISTRATION_NOT_FOUND');
@@ -280,7 +258,7 @@ export const RegistrationService = {
       }
       
       // 3. Kiểm tra event
-      const event = await Event.findById(registration.eventId).session(session);
+      const event = await Event.findById(registration.eventId);
       
       if (!event) {
         const err = new Error('EVENT_NOT_FOUND');
@@ -294,7 +272,7 @@ export const RegistrationService = {
         const approvedCount = await Registration.countDocuments({
           eventId: event._id,
           status: 'APPROVED'
-        }).session(session);
+        });
         
         if (approvedCount >= event.maxParticipants) {
           const err = new Error('EVENT_FULL');
@@ -307,17 +285,13 @@ export const RegistrationService = {
       // 5. Cập nhật registration
       registration.status = 'APPROVED';
       registration.approvedBy = managerId;
-      await registration.save({ session });
+      await registration.save();
       
       // 6. Tăng currentParticipants
       await Event.findByIdAndUpdate(
         event._id,
-        { $inc: { currentParticipants: 1 } },
-        { session }
+        { $inc: { currentParticipants: 1 } }
       );
-      
-      // Commit transaction
-      await session.commitTransaction();
       
       // Populate để trả về đầy đủ info
       const result = await Registration.findById(regId)
@@ -328,10 +302,7 @@ export const RegistrationService = {
       return result;
       
     } catch (error) {
-      await session.abortTransaction();
       throw error;
-    } finally {
-      session.endSession();
     }
   },
 
@@ -343,12 +314,9 @@ export const RegistrationService = {
    * - KHÔNG thay đổi currentParticipants
    */
   async rejectRegistration(regId, managerId, reason) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
     try {
       // 1. Tìm registration
-      const registration = await Registration.findById(regId).session(session);
+      const registration = await Registration.findById(regId);
       
       if (!registration) {
         const err = new Error('REGISTRATION_NOT_FOUND');
@@ -372,13 +340,10 @@ export const RegistrationService = {
       // Lưu rejection reason vào schema nếu có field
       // Note: Cần thêm field rejectionReason vào registration model nếu chưa có
       if (reason) {
-        registration.set('rejectionReason', reason);
+        registration.rejectionReason = reason;
       }
       
-      await registration.save({ session });
-      
-      // Commit transaction
-      await session.commitTransaction();
+      await registration.save();
       
       // Populate để trả về đầy đủ info
       const result = await Registration.findById(regId)
@@ -389,10 +354,7 @@ export const RegistrationService = {
       return result;
       
     } catch (error) {
-      await session.abortTransaction();
       throw error;
-    } finally {
-      session.endSession();
     }
   }
 };

@@ -28,8 +28,7 @@ export const loginSchema = Joi.object({
     'string.empty': 'Mật khẩu không được để trống',
     'any.required': 'Mật khẩu là bắt buộc'
   }),
-  recaptcha: Joi.string().required().messages({
-    'string.empty': 'reCAPTCHA không được để trống',
-    'any.required': 'reCAPTCHA là bắt buộc'
+  recaptcha: Joi.string().optional().messages({
+    'string.empty': 'reCAPTCHA không được để trống'
   })
 });

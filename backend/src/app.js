@@ -14,7 +14,7 @@ app.use(express.json());
 app.use(morgan('dev'));
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
-app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/registrations', registrationRoutes);
 
