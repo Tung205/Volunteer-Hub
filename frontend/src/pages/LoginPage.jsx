@@ -52,7 +52,7 @@ function LoginPage() {
 
             if (res.data?.accessToken) {
                 localStorage.setItem('accessToken', res.data.accessToken);
-                // localStorage.setItem('user', JSON.stringify(res.data.user)); // Lưu thêm user info nếu cần
+                localStorage.setItem('user', JSON.stringify(res.data.user));
             }
             setIsLoading(false);
             Swal.fire({

@@ -67,9 +67,7 @@ function RegisterPage() {
 
         setIsLoading(true);
         try {
-            if (import.meta.env.VITE_ENV === 'production') {
-                const res = await api.post("/api/auth/register", fullData);
-            }
+            const res = await api.post("/api/auth/register", fullData);
             setIsLoading(false);
 
             Swal.fire({
@@ -88,8 +86,8 @@ function RegisterPage() {
 
             if (errorResponse) {
                 //Validation
-                if (errorResponse.error === 'VALIDATION' && Array.isArray(errorResponse.details)) {
-                    errorMessage = `<div class="text-left text-sm">${errorResponse.details.map(msg => `• ${msg}`).join('<br/>')}</div>`;
+                if (errorResponse.error === 'VALIDATION_ERROR' && Array.isArray(errorResponse.details)) {
+                    errorMessage = `<div class="text-left text-sm">${errorResponse.details.map(d => `• ${d.message}`).join('<br/>')}</div>`;
                 }
                 //(INTERNAL)
                 else if (errorResponse.error === 'INTERNAL') {

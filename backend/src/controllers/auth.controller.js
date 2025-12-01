@@ -5,7 +5,7 @@ export const AuthController = {
   async register(req, res) {
     try {
       const user = await AuthService.register(req.body);
-      return res.status(201).json({ message: 'registered', user });
+      return res.status(201).json({ user });
     } catch (e) {
       if (e.status) return res.status(e.status).json({ error: e.message });
       console.error(e);
@@ -43,8 +43,8 @@ export const AuthController = {
       return res.status(500).json({ error: "RECAPTCHA_VERIFICATION_FAILED" });
     }
     try {
-      const user = await AuthService.login(req.body);
-      return res.status(200).json({ message: 'logged_in', user });
+      const result = await AuthService.login(req.body);
+      return res.status(200).json(result);
     } catch (e) {
       if (e.status) return res.status(e.status).json({ error: "Sai mật khẩu, email hoặc email không tồn tại" });
       console.error(e);
