@@ -28,7 +28,7 @@ const Header = () => {
           </li>
           <li>
             <NavLink 
-              to="/event" 
+              to="/events" 
               onClick={handleScrollTop}
               className="underline-animated font-bold text-xl"
             >

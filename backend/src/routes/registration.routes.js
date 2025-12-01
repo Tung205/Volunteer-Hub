@@ -37,8 +37,8 @@ router.delete('/:eventId/register',
 
 // ==================== MANAGER APIS ====================
 
-// GET /api/registrations/event/:eventId - MANAGER xem danh sách TNV đã đăng ký
-router.get('/event/:eventId',
+// GET /api/registrations/events/:eventId - MANAGER xem danh sách TNV đã đăng ký
+router.get('/events/:eventId',
   isAuthenticated,
   hasRole('MANAGER', 'ADMIN'),
   canManageRegistrations,

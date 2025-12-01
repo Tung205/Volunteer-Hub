@@ -48,7 +48,7 @@ function LoginPage() {
             setIsLoading(true);
 
             //API Login
-            const res = await api.post("/auth/login", data);
+            const res = await api.post("/api/auth/login", data);
 
             if (res.data?.accessToken) {
                 localStorage.setItem('accessToken', res.data.accessToken);

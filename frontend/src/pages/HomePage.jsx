@@ -115,7 +115,7 @@ const HomePage = () => {
                     <p className="text-lg md:text-xl font-semibold text-gray-800 mb-6">
                         Một hệ sinh thái dành riêng cho tình nguyện viên, là nơi bạn có thể dễ dàng tìm kiếm các hoạt động tình nguyện từ các tổ chức uy tín, nhanh chóng đăng ký tham gia các dự án tâm huyết, đồng thời chia sẻ những khoảnh khắc và thành tựu ý nghĩa nhất của mình để lan tỏa năng lượng tích cực trong cộng đồng.
                     </p>
-                    <Link to="/event">
+                    <Link to="/events">
                         <button className="bg-green-800 text-white text-xl px-6 py-2 rounded-md hover:bg-green-700 transition mt-10 shadow-lg">
                             Khám phá sự kiện
                         </button>

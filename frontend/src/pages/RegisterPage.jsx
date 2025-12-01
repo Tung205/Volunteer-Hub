@@ -67,8 +67,9 @@ function RegisterPage() {
 
         setIsLoading(true);
         try {
-            // TODO: Xử lý logic gọi API đăng ký ở đây
-            // const res = await api.post("/auth/register", fullData);
+            if (import.meta.env.VITE_ENV === 'production') {
+                const res = await api.post("/api/auth/register", fullData);
+            }
             setIsLoading(false);
 
             Swal.fire({
