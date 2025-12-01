@@ -1,6 +1,6 @@
 import { Routes, Route} from 'react-router-dom';
-
-import IntroPage from './pages/IntroPage.jsx';
+import MainLayout from './components/MainLayout.jsx';
+import HomePage from './pages/HomePage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from "./pages/RegisterPage.jsx";
 import EventPage from "./pages/EventPage.jsx";
@@ -9,10 +9,14 @@ import DashBoard from "./pages/DashBoard.jsx";
 export default function App() {
   return (
       <Routes>
-          <Route path="/" element={<IntroPage/>} />
+          <Route path='/' element={<MainLayout/>}>
+            <Route index element={<HomePage/>} />
+            <Route path="/event" element={<EventPage/>} />
+          </Route>
+
           <Route path="/login" element={<LoginPage/>} />
           <Route path="/register" element={<RegisterPage/>} />
-          <Route path="/event" element={<EventPage/>} />
+
           <Route path="/dashboard" element={<DashBoard/>} />
       </Routes>
   )

@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { AiOutlineEye, AiOutlineEyeInvisible } from 'react-icons/ai';
+import { AiOutlineLoading3Quarters } from 'react-icons/ai'
 import register_left from '../assets/register_left.png';
 import register_right from '../assets/register_right.png';
 
@@ -34,14 +35,14 @@ const registerSchema = z.object({
             return new Date(val) <= minAgeDate;
         }, "Bạn phải đủ 16 tuổi để tham gia"),
     gender: z.enum(["Nam", "Nữ", "Khác"], {
-        errorMap: () => ({ message: "Vui lòng chọn giới tính" })
+        errorMap: () => ({ message: "Vui lòng chọn giới tính" }),
     }),
     acceptTerms: z.boolean().refine(val => val === true, {
         message: "Bạn phải chấp nhận chính sách của chúng tôi"
     })
 }).refine(data => data.password === data.confirmPassword, {
     message: "Mật khẩu không khớp",
-    path: ["confirmPassword"] // Báo lỗi cho trường 'confirmPassword'
+    path: ["confirmPassword"]
 });
 
 
@@ -50,6 +51,7 @@ function RegisterPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isPolicyOpen, setIsPolicyOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const { register, handleSubmit, formState: { errors } } = useForm({
         resolver: zodResolver(registerSchema),
@@ -63,9 +65,11 @@ function RegisterPage() {
         };
         console.log("Dữ liệu form hợp lệ (từ Zod):", fullData);
 
+        setIsLoading(true);
         try {
             // TODO: Xử lý logic gọi API đăng ký ở đây
-            const res = await api.post("/auth/register", data);
+            // const res = await api.post("/auth/register", fullData);
+            setIsLoading(false);
 
             Swal.fire({
                 icon: 'success',
@@ -76,11 +80,32 @@ function RegisterPage() {
                 navigate('/login');
             });
         } catch (error) {
-            console.error(error);
+            console.error("Lỗi đăng ký:", error);
+            setIsLoading(false);
+            const errorResponse = error.response?.data;
+            let errorMessage = 'Không thể kết nối đến máy chủ.';
+
+            if (errorResponse) {
+                //Validation
+                if (errorResponse.error === 'VALIDATION' && Array.isArray(errorResponse.details)) {
+                    errorMessage = `<div class="text-left text-sm">${errorResponse.details.map(msg => `• ${msg}`).join('<br/>')}</div>`;
+                }
+                //(INTERNAL)
+                else if (errorResponse.error === 'INTERNAL') {
+                    errorMessage = 'Hệ thống đang gặp sự cố. Vui lòng thử lại sau.';
+                }
+                //Error Business
+                else if (errorResponse.error) {
+                    errorMessage = errorResponse.error;
+                }
+            }
+
             Swal.fire({
                 icon: 'error',
                 title: 'Đăng ký thất bại',
-                text: error.response?.data?.error || 'Đã có lỗi xảy ra.',
+                html: errorMessage, 
+                confirmButtonText: 'Thử lại',
+                confirmButtonColor: '#16a34a'
             });
         }
     };
@@ -112,9 +137,9 @@ function RegisterPage() {
                                 id="fullName"
                                 placeholder="Họ và tên"
                                 {...register("name")}
-                                className={`w-full px-4 py-3 border ${errors.fullName ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500`}
+                                className={`w-full px-4 py-3 border ${errors.name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500`}
                             />
-                            {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName.message}</p>}
+                            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
                         </div>
                         <div>
                             <label htmlFor="email" className="sr-only">Email</label>
@@ -138,7 +163,8 @@ function RegisterPage() {
                                     className={`w-full px-4 py-3 pr-10 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500`}
                                 />
                                 <button
-                                    type="button" // Quan trọng: Ngăn form submit
+                                    type="button"
+                                    tabIndex={-1}
                                     onClick={() => setShowPassword(!showPassword)}
                                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-green-600 cursor-pointer"
                                 >
@@ -151,7 +177,6 @@ function RegisterPage() {
                             <label htmlFor="confirmPassword" className="sr-only">Xác nhận mật khẩu</label>
                             <div className="relative">
                                 <input
-                                    // 2. Đổi type dựa trên state
                                     type={showConfirmPassword ? "text" : "password"}
                                     id="confirmPassword"
                                     placeholder="Xác nhận mật khẩu"
@@ -159,9 +184,9 @@ function RegisterPage() {
                                     // Thêm 'pr-10'
                                     className={`w-full px-4 py-3 pr-10 border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500`}
                                 />
-                                {/* 3. Thêm nút icon */}
                                 <button
                                     type="button"
+                                    tabIndex={-1}
                                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-green-600 cursor-pointer"
                                 >
@@ -222,9 +247,25 @@ function RegisterPage() {
                         <div>
                             <button
                                 type="submit"
-                                className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-semibold text-lg hover:bg-green-700 transition duration-300 hover:cursor-pointer"
+                                disabled={isLoading}
+                                className={`
+                                    w-full py-3 px-4 rounded-lg font-semibold text-lg transition duration-300
+                                    flex items-center justify-center gap-2
+                                    ${isLoading 
+                                        ? 'bg-green-400 cursor-not-allowed'
+                                        : 'bg-green-600 hover:bg-green-700 hover:cursor-pointer'
+                                    }
+                                    text-white
+                                `}
                             >
-                                Đăng ký
+                                {isLoading ? (
+                                    <>
+                                        <AiOutlineLoading3Quarters className="animate-spin h-5 w-5" />
+                                        <span>Đang xử lý...</span>
+                                    </>
+                                ) : (
+                                    "Đăng ký"
+                                )}
                             </button>
                         </div>
                         <p className="text-center text-sm text-gray-600">

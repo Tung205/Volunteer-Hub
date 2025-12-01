@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @layer components {
-    .underline-animated {
+     .underline-animated {
         @apply inline-block relative;
         @apply text-gray-800 transition-colors duration-300;
         @apply hover:text-green-600;
