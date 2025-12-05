@@ -67,8 +67,17 @@ export const EventService = {
     const query = this.buildFilterQuery(filters);
     const sortOptions = this.buildSortOptions(sort);
     
-    // Calculate pagination
-    const skip = (page - 1) * limit;
+    // Count total first to validate page
+    const total = await Event.countDocuments(query);
+    const totalPages = Math.ceil(total / limit);
+    
+    // Auto-redirect: If page exceeds totalPages, redirect to last valid page
+    const requestedPage = page;
+    const actualPage = totalPages > 0 ? Math.min(page, totalPages) : 1;
+    const wasRedirected = requestedPage !== actualPage;
+    
+    // Calculate pagination with actual page
+    const skip = (actualPage - 1) * limit;
     
     // Build query
     let queryBuilder = Event.find(query)
@@ -82,21 +91,23 @@ export const EventService = {
       queryBuilder = queryBuilder.populate('organizerId', 'name email');
     }
     
-    // Execute query and count in parallel for better performance
-    const [events, total] = await Promise.all([
-      queryBuilder.exec(),
-      Event.countDocuments(query)
-    ]);
+    // Execute query
+    const events = await queryBuilder.exec();
     
     return {
       events,
       pagination: {
-        page,
+        page: actualPage,
         limit,
         total,
-        totalPages: Math.ceil(total / limit),
-        hasNext: page < Math.ceil(total / limit),
-        hasPrev: page > 1
+        totalPages,
+        hasNext: actualPage < totalPages,
+        hasPrev: actualPage > 1,
+        // Thông tin redirect để frontend biết
+        ...(wasRedirected && { 
+          requestedPage,
+          redirected: true 
+        })
       }
     };
   },
