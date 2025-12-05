@@ -1,10 +1,25 @@
 import Joi from 'joi';
 
-// Query validation cho GET /api/events
+const PUBLIC_STATUS = ['OPENED', 'CLOSED', 'CANCELLED'];
+const ALL_STATUS = ['PENDING', 'OPENED', 'REJECTED', 'CLOSED', 'CANCELLED'];
+
+// Query validation cho PUBLIC GET /api/events
 export const getEventsQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(50).default(6),
-  status: Joi.string().valid('PENDING', 'OPENED', 'REJECTED', 'CLOSED', 'CANCELLED'),
+  status: Joi.string().valid(...PUBLIC_STATUS),
+  location: Joi.string(),
+  search: Joi.string().max(100),
+  startDate: Joi.date(),
+  endDate: Joi.date(),
+  sort: Joi.string().valid('upcoming', 'newest').default('upcoming')
+});
+
+// Query validation cho ADMIN GET /api/events (nếu cần full access)
+export const getEventsQuerySchemaAdmin = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(50).default(6),
+  status: Joi.string().valid(...ALL_STATUS),
   location: Joi.string(),
   search: Joi.string().max(100),
   startDate: Joi.date(),
