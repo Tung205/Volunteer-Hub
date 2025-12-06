@@ -1,14 +1,25 @@
 import Joi from 'joi';
 
+// ==================== CONSTANTS ====================
 const PUBLIC_STATUS = ['OPENED', 'CLOSED', 'CANCELLED'];
 const ALL_STATUS = ['PENDING', 'OPENED', 'REJECTED', 'CLOSED', 'CANCELLED'];
+
+// Location pattern: Unicode letters, numbers, spaces, common punctuation
+// Ngăn chặn ReDoS và regex injection bằng cách chỉ cho phép ký tự an toàn
+const LOCATION_PATTERN = /^[\p{L}\p{N}\s,.\/\-()]+$/u;
+const LOCATION_MAX_LENGTH = 10;
+
+// ==================== QUERY SCHEMAS ====================
 
 // Query validation cho PUBLIC GET /api/events
 export const getEventsQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(50).default(6),
   status: Joi.string().valid(...PUBLIC_STATUS),
-  location: Joi.string(),
+  location: Joi.string().trim().max(LOCATION_MAX_LENGTH).pattern(LOCATION_PATTERN).messages({
+    'string.max': `Địa điểm không quá ${LOCATION_MAX_LENGTH} ký tự`,
+    'string.pattern.base': 'Địa điểm chứa ký tự không hợp lệ'
+  }),
   search: Joi.string().max(100),
   startDate: Joi.date(),
   endDate: Joi.date(),
@@ -20,7 +31,10 @@ export const getEventsQuerySchemaAdmin = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(50).default(6),
   status: Joi.string().valid(...ALL_STATUS),
-  location: Joi.string(),
+  location: Joi.string().trim().max(LOCATION_MAX_LENGTH).pattern(LOCATION_PATTERN).messages({
+    'string.max': `Địa điểm không quá ${LOCATION_MAX_LENGTH} ký tự`,
+    'string.pattern.base': 'Địa điểm chứa ký tự không hợp lệ'
+  }),
   search: Joi.string().max(100),
   startDate: Joi.date(),
   endDate: Joi.date(),
@@ -55,8 +69,10 @@ export const createEventSchema = Joi.object({
     'string.empty': 'Mô tả không được để trống',
     'any.required': 'Mô tả là bắt buộc'
   }),
-  location: Joi.string().required().messages({
+  location: Joi.string().required().trim().max(LOCATION_MAX_LENGTH).pattern(LOCATION_PATTERN).messages({
     'string.empty': 'Địa điểm không được để trống',
+    'string.max': `Địa điểm không quá ${LOCATION_MAX_LENGTH} ký tự`,
+    'string.pattern.base': 'Địa điểm chứa ký tự không hợp lệ',
     'any.required': 'Địa điểm là bắt buộc'
   }),
   address: Joi.string().allow('').default(''),
@@ -78,7 +94,10 @@ export const updateEventSchema = Joi.object({
     'string.max': 'Tiêu đề không quá 200 ký tự'
   }),
   description: Joi.string().max(5000),
-  location: Joi.string(),
+  location: Joi.string().trim().max(LOCATION_MAX_LENGTH).pattern(LOCATION_PATTERN).messages({
+    'string.max': `Địa điểm không quá ${LOCATION_MAX_LENGTH} ký tự`,
+    'string.pattern.base': 'Địa điểm chứa ký tự không hợp lệ'
+  }),
   address: Joi.string().allow(''),
   startTime: Joi.date().greater('now').messages({
     'date.greater': 'Thời gian bắt đầu phải sau thời điểm hiện tại'
