@@ -12,12 +12,12 @@ export default function App() {
           <Route path='/' element={<MainLayout/>}>
             <Route index element={<HomePage/>} />
             <Route path="/events" element={<EventPage/>} />
+            <Route path="/dashboard" element={<DashBoard/>} />
           </Route>
 
           <Route path="/login" element={<LoginPage/>} />
           <Route path="/register" element={<RegisterPage/>} />
 
-          <Route path="/dashboard" element={<DashBoard/>} />
       </Routes>
   )
 }
