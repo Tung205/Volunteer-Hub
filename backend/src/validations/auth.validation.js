@@ -6,11 +6,17 @@ export const registerSchema = Joi.object({
     'string.empty': 'Email không được để trống',
     'any.required': 'Email là bắt buộc'
   }),
-  password: Joi.string().min(6).required().messages({
+  password: Joi.string()
+  .min(6)
+  .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/)
+  .required()
+  .messages({
     'string.min': 'Mật khẩu phải có ít nhất 6 ký tự',
+    'string.pattern.base': 'Mật khẩu phải gồm chữ hoa, chữ thường, số và ký tự đặc biệt',
     'string.empty': 'Mật khẩu không được để trống',
     'any.required': 'Mật khẩu là bắt buộc'
   }),
+
   name: Joi.string().allow('').default(''),
   dateOfBirth: Joi.date().less('now').messages({
     'date.less': 'Ngày sinh phải trước ngày hiện tại'

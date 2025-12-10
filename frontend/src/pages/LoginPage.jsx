@@ -67,7 +67,7 @@ function LoginPage() {
                 const redirectUrl = params.get('redirect');
 
                 if (redirectUrl) {
-                    navigate(decodeURIComponent(redirectUrl));
+                    navigate(decodeURIComponent(redirectUrl), { replace: true });
                 } else {
                     navigate('/dashboard');
                 }
