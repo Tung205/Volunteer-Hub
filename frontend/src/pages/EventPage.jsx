@@ -1,196 +1,401 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import {
-    FaCalendarCheck,
-    FaClock,
-    FaUserCog,
-    FaCheckCircle,
-    FaTimesCircle,
-    FaInfoCircle,
-    FaMapMarkerAlt,
-    FaCalendarAlt
-} from "react-icons/fa";
-import { HiSparkles } from "react-icons/hi";
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'; // Thêm useSearchParams
+import Swal from 'sweetalert2';
 
-const DashBoard = () => {
-    // 1. Dữ liệu giả lập cho 3 thẻ thống kê (Summary Cards)
-    const stats = [
-        {
-            id: 1,
-            title: "Sự kiện đã tham gia",
-            count: 4,
-            icon: <FaCalendarCheck className="text-white text-xl" />,
-            bg: "bg-red-100",
-            iconBg: "bg-red-400", // Màu nền của icon tròn
-            textColor: "text-gray-800",
-            countColor: "text-red-500"
-        },
-        {
-            id: 2,
-            title: "Chờ duyệt",
-            count: 10,
-            icon: <FaClock className="text-white text-xl" />,
-            bg: "bg-yellow-100",
-            iconBg: "bg-yellow-400",
-            textColor: "text-gray-800",
-            countColor: "text-yellow-600"
-        },
-        {
-            id: 3,
-            title: "Vai trò",
-            roleName: "TNV", // Text hiển thị trong badge
-            icon: <FaUserCog className="text-white text-xl" />,
-            bg: "bg-blue-100",
-            iconBg: "bg-blue-400",
-            textColor: "text-gray-800",
-            roleColor: "bg-blue-400 text-white" // Style cho badge TNV
-        },
-    ];
+import InfoEvent from '../components/InfoEvent';
+import EventCard from '../components/EventCard';
 
-    // 2. Dữ liệu giả lập cho "Hoạt động gần đây"
-    const recentActivities = [
-        { id: 1, type: 'success', text: 'Bạn đã đăng ký tham gia "Dọn rác bãi biển"', time: '12:30 pm' },
-        { id: 2, type: 'info', text: 'Bạn đã cập nhật hồ sơ cá nhân', time: '16:36 pm' },
-        { id: 3, type: 'error', text: 'Bạn đã bị từ chối tham gia sự kiện A', time: '16:36 pm' },
-    ];
+import bannerImage from '../assets/introDashboard.png';
 
-    // 3. Dữ liệu giả lập cho "Sự kiện nổi bật"
-    const featuredEvents = [
-        { id: 1, title: "Trồng cây gây rừng", location: "Lào Cai", start: "3/12/2025", end: "4/12/2025" },
-        { id: 2, title: "Trồng cây gây rừng", location: "Lào Cai", start: "3/12/2025", end: "4/12/2025" },
-        { id: 3, title: "Trồng cây gây rừng", location: "Lào Cai", start: "3/12/2025", end: "4/12/2025" },
-    ];
+import { IoSearch } from "react-icons/io5";
 
-    // Helper render icon hoạt động
-    const renderActivityIcon = (type) => {
-        switch(type) {
-            case 'success': return <FaCheckCircle className="text-green-500 text-xl" />;
-            case 'info': return <FaInfoCircle className="text-green-500 text-xl" />;
-            case 'error': return <FaTimesCircle className="text-red-500 text-xl" />;
-            default: return null;
-        }
+// --- MOCK DATA ---
+const MOCK_EVENTS = Array.from({ length: 20 }).map((_, index) => ({
+  id: index + 1,
+  imageUrl: "https://storage.googleapis.com/agent-tools-public-content/image_a0b60e.png",
+  title: index % 2 === 0 ? `Sự kiện Trồng cây gây rừng ${index + 1}` : `Chiến dịch Dọn rác bãi biển ${index + 1}`,
+  location: index % 3 === 0 ? "Lào Cai" : (index % 3 === 1 ? "Hà Nội" : "Đà Nẵng"),
+  date: "23/11/2025",
+  organizer: "Nguyễn Văn A",
+  description: "Mô tả chi tiết sự kiện...",
+  userStatus: index === 0 ? 'approved' : (index === 1 ? 'pending' : null),
+  scale: index % 2 === 0 ? 'medium' : 'large'
+}));
+
+const EventPage = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams(); // Hook quản lý URL params
+
+  // --- STATE ---
+  const [events, setEvents] = useState(MOCK_EVENTS); // Danh sách hiển thị
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // State cho Search & Filter
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || ''); // Lấy giá trị từ URL nếu có
+  const [locationFilter, setLocationFilter] = useState(searchParams.get('loc') || '');
+  const [scaleFilter, setScaleFilter] = useState(searchParams.get('scale') || '');
+  
+  // State cho Suggestions
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef(null); // Để click ra ngoài thì đóng suggestion
+
+  // --- PAGINATION CONFIG ---
+  const itemsPerPage = 6;
+  const totalPages = Math.ceil(events.length / itemsPerPage);
+
+  // --- HANDLER SEARCH & FILTER ---
+  
+  // 1. Hàm lọc dữ liệu gốc (Core Logic)
+  const filterEvents = (term, loc, scale) => {
+    let result = MOCK_EVENTS;
+
+    if (term) {
+      result = result.filter(e => e.title.toLowerCase().includes(term.toLowerCase()));
+    }
+    if (loc) {
+      result = result.filter(e => e.location === loc); // Mock data phải khớp chính xác value
+    }
+    if (scale) {
+        // Logic giả lập cho scale (vì mock data chưa chuẩn hóa scale)
+        if(scale === 'small') result = result.filter(e => e.id % 3 === 0);
+        // ... thêm logic tùy ý
+    }
+
+    setEvents(result);
+    setCurrentPage(1); // Reset về trang 1 khi search
+  };
+
+  // 2. Xử lý khi nhập liệu (Hiện Suggestion)
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+
+    if (value.length > 0) {
+      // Lọc ra các title duy nhất khớp với từ khóa để gợi ý
+      const matchedTitles = MOCK_EVENTS
+        .filter(e => e.title.toLowerCase().includes(value.toLowerCase()))
+        .map(e => e.title);
+      
+      // Xóa trùng lặp (Set) và lấy tối đa 5 gợi ý
+      const uniqueSuggestions = [...new Set(matchedTitles)].slice(0, 5);
+      setSuggestions(uniqueSuggestions);
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+    }
+  };
+
+  // 3. Thực hiện Search (Cập nhật URL)
+  const executeSearch = (termOverride) => {
+    const term = termOverride !== undefined ? termOverride : searchTerm;
+    
+    // Đẩy params lên URL (đây là cách giữ trạng thái khi reload/back)
+    // URL sẽ thành: /events?q=...&loc=...&scale=...
+    setSearchParams({ 
+        q: term, 
+        loc: locationFilter, 
+        scale: scaleFilter 
+    });
+    
+    setShowSuggestions(false); // Đóng gợi ý
+  };
+
+  // 4. Chọn một gợi ý
+  const handleSelectSuggestion = (suggestion) => {
+    setSearchTerm(suggestion);
+    executeSearch(suggestion);
+  };
+
+  // --- EFFECTS ---
+
+  // Effect 1: Lắng nghe URL thay đổi để lọc data (Lazy Load / Persistence Logic)
+  // Khi bạn F5 hoặc ấn nút Back, code này sẽ chạy để khôi phục danh sách
+  useEffect(() => {
+    const q = searchParams.get('q') || '';
+    const loc = searchParams.get('loc') || '';
+    const scale = searchParams.get('scale') || '';
+
+    // Sync state với URL (đề phòng trường hợp paste link)
+    setSearchTerm(q);
+    setLocationFilter(loc);
+    setScaleFilter(scale);
+
+    // Thực hiện lọc
+    filterEvents(q, loc, scale);
+  }, [searchParams]); // Chạy lại khi URL params thay đổi
+
+  // Effect 2: Click outside để đóng suggestion
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
     };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-    return (
-        <div className="min-h-screen bg-gray-50 py-8 px-4 md:px-8">
-            <div className="max-w-7xl mx-auto">
+  // --- CÁC HÀM CŨ (Pagination, Modal, Auth) ---
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(prev => prev - 1);
+  };
 
-                {/* GRID CHÍNH: Chia 2 cột (Cột trái 2 phần, Cột phải 1 phần) */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
+  };
 
-                    {/* --- CỘT TRÁI (Chiếm 2/3) --- */}
-                    <div className="lg:col-span-2 space-y-8">
+  const currentEvents = events.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-                        {/* 1. Summary Cards */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                            {stats.map((item) => (
-                                <div key={item.id} className={`${item.bg} rounded-[20px] p-6 flex flex-col items-center justify-center shadow-sm relative overflow-hidden`}>
-                                    {/* Icon tròn góc trên trái */}
-                                    <div className={`${item.iconBg} p-3 rounded-full absolute top-4 left-4 shadow-sm`}>
-                                        {item.icon}
-                                    </div>
+  const handleCardClick = (event) => {
+    setSelectedEvent(event);
+    setIsModalOpen(true);
+  };
 
-                                    {/* Nội dung chính */}
-                                    <div className="mt-8 text-center">
-                                        {item.roleName ? (
-                                            // Nếu là thẻ Vai trò
-                                            <span className={`${item.roleColor} text-lg font-bold px-4 py-1 rounded-full shadow-sm block mb-2`}>
-                                            {item.roleName}
-                                        </span>
-                                        ) : (
-                                            // Nếu là thẻ đếm số
-                                            <span className={`text-4xl font-black ${item.countColor} block mb-1`}>
-                                            {item.count}
-                                        </span>
-                                        )}
-                                        <p className={`font-bold ${item.textColor} text-sm md:text-base`}>
-                                            {item.title}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+  const handleRegister = () => {
+    const isAuthenticated = localStorage.getItem('accessToken'); 
+    if (!isAuthenticated) {
+      setIsModalOpen(false);
+      const redirectUrl = `/events?eventId=${selectedEvent.id}&popup=true&autoRegister=true`;
+      Swal.fire({
+        icon: 'warning',
+        title: 'Bạn chưa đăng nhập',
+        text: 'Vui lòng đăng nhập để đăng ký sự kiện!',
+        showCancelButton: true,
+        confirmButtonText: 'Đăng nhập ngay',
+        cancelButtonText: 'Hủy',
+        confirmButtonColor: '#16a34a'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
+        }
+      });
+      return;
+    }
+    // Logic đăng ký...
+    Swal.fire({
+        title: 'Đang xử lý...',
+        didOpen: () => Swal.showLoading(),
+        timer: 1000
+    }).then(() => {
+        const updatedEvents = events.map(ev => 
+            ev.id === selectedEvent.id ? { ...ev, userStatus: 'pending' } : ev
+        );
+        setEvents(updatedEvents);
+        setSelectedEvent(prev => ({ ...prev, userStatus: 'pending' }));
+        Swal.fire('Thành công', 'Đăng ký thành công! Vui lòng chờ duyệt.', 'success');
+    });
+  };
 
-                        {/* 2. Hoạt động gần đây */}
-                        <div className="bg-white rounded-[20px] p-6 md:p-8 shadow-sm">
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-xl font-bold text-gray-800">Hoạt động gần đây</h2>
-                                {/* Dropdown giả */}
-                                <button className="bg-gray-100 text-gray-500 text-sm px-3 py-1 rounded-md hover:bg-gray-200 transition">
-                                    Hôm nay ▼
-                                </button>
-                            </div>
+  const handleJoinChat = () => {
+    navigate('/');
+  };
 
-                            <div className="space-y-6">
-                                {recentActivities.map((act) => (
-                                    <div key={act.id} className="flex items-center justify-between border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                                        <div className="flex items-center gap-4">
-                                            {renderActivityIcon(act.type)}
-                                            <span className="text-gray-700 font-medium text-sm md:text-base">
-                                            {act.text}
-                                        </span>
-                                        </div>
-                                        <span className="text-gray-400 text-sm whitespace-nowrap ml-4">
-                                        {act.time}
-                                    </span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+  // Auto Register Effect
+  useEffect(() => {
+    const eventId = searchParams.get('eventId');
+    const popup = searchParams.get('popup');
+    const autoRegister = searchParams.get('autoRegister');
 
-                    {/* --- CỘT PHẢI (Chiếm 1/3) --- */}
-                    <div className="lg:col-span-1">
-                        <div className="bg-[#E8E8E8] rounded-[20px] p-6 h-full"> {/* Màu nền xám nhạt riêng cho khung này */}
+    if (eventId && popup === 'true') {
+        const foundEvent = MOCK_EVENTS.find(e => e.id === parseInt(eventId)); // Tìm trong MOCK gốc
+        if (foundEvent) {
+            setSelectedEvent(foundEvent);
+            setIsModalOpen(true);
+            if (autoRegister === 'true') {
+                // Clear params nhưng giữ lại search state nếu muốn (ở đây mình replace hết cho sạch)
+                // navigate('/events', { replace: true }); 
+                // Tốt hơn là chỉ xóa các params popup, giữ lại q, loc
+                
+                setTimeout(() => {
+                    const updatedEvents = events.map(ev => 
+                        ev.id === parseInt(eventId) ? { ...ev, userStatus: 'pending' } : ev
+                    );
+                    setEvents(updatedEvents);
+                    setSelectedEvent(prev => ({ ...prev, userStatus: 'pending' }));
+                    Swal.fire('Thành công', 'Đăng ký tự động thành công!', 'success');
+                }, 500);
+            }
+        }
+    }
+  }, []); // Chạy 1 lần khi mount
 
-                            <div className="flex items-center gap-2 mb-6">
-                                <h2 className="text-xl font-bold text-gray-800">Hoạt động Tình Nguyện nổi bật</h2>
-                                <HiSparkles className="text-yellow-500 text-2xl" />
-                            </div>
 
-                            <div className="space-y-4">
-                                {featuredEvents.map((evt) => (
-                                    <div key={evt.id} className="bg-white rounded-xl p-4 shadow-sm flex gap-4">
-                                        {/* Ảnh Placeholder */}
-                                        <div className="w-24 h-24 bg-white border-2 border-gray-300 rounded-lg flex-shrink-0 flex items-center justify-center">
-                                            {/* Icon ảnh giả lập */}
-                                            <div className="w-4 h-4 rounded-full border-2 border-gray-400"></div>
-                                            <div className="w-8 h-4 border-t-2 border-r-2 border-gray-400 mt-2 ml-1 transform rotate-45"></div>
-                                        </div>
+  return (
+    <div className="w-full bg-gray-50 min-h-screen pb-10">
+      
+      {/*SECTION 1: BANNER & SEARCH*/}
+      <section className="w-full h-[450px] md:h-[550px] relative">
+         <img 
+            src={bannerImage}
+            alt="Search Banner"
+            className="w-full h-full object-cover"
+            loading="lazy" // Lazy load cho banner
+         />
+         <div className="absolute inset-0 bg-black/50"></div>
+         
+         {/* Search Box Container */}
+         <div className='absolute inset-0 flex flex-col items-center justify-center px-4 text-center z-10'>
+             <h1 className="text-white text-2xl md:text-4xl font-bold mb-2">Xin chào,</h1>
+             <h2 className='text-white text-2xl md:text-4xl font-bold mb-8'>
+                 Hôm nay bạn muốn tham gia sự kiện nào?
+             </h2>
 
-                                        {/* Nội dung card */}
-                                        <div className="flex-1 flex flex-col justify-between">
-                                            <div>
-                                                <h3 className="font-bold text-gray-800 text-base">{evt.title}</h3>
-                                                <p className="text-gray-600 text-xs mt-1">
-                                                    <span className="font-bold">Địa điểm:</span> {evt.location}
-                                                </p>
-                                                <p className="text-gray-500 text-[10px] mt-1">
-                                                    Thời gian bắt đầu: {evt.start}
-                                                </p>
-                                                <p className="text-gray-500 text-[10px]">
-                                                    Thời gian kết thúc: {evt.end}
-                                                </p>
-                                            </div>
-                                        </div>
+             {/* SEARCH BAR & SUGGESTIONS */}
+             <div className='w-full max-w-3xl relative mb-6' ref={searchRef}>
+                 <div className="relative">
+                    <input
+                        type='text'
+                        value={searchTerm}
+                        onChange={handleInputChange}
+                        onKeyDown={(e) => e.key === 'Enter' && executeSearch()} // Enter để search
+                        onFocus={() => searchTerm && setShowSuggestions(true)}
+                        placeholder='Nhập sự kiện bạn muốn tham gia'
+                        className='w-full py-4 px-6 rounded-sm text-gray-700 bg-white/80 outline-none focus:ring-2 focus:ring-green-500 shadow-lg text-lg'
+                    />
+                    <button 
+                        onClick={() => executeSearch()}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-green-600"
+                    >
+                        <IoSearch size={28} />
+                    </button>
+                 </div>
 
-                                        {/* Nút Chi tiết (Nằm giữa theo chiều dọc hoặc dưới cùng) */}
-                                        <div className="flex flex-col justify-center">
-                                            <button className="bg-green-700 hover:bg-green-800 text-white text-xs font-bold py-1 px-3 rounded shadow-sm">
-                                                Chi tiết
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                 {/* SUGGESTION DROPDOWN */}
+                 {showSuggestions && suggestions.length > 0 && (
+                    <ul className="absolute top-full left-0 right-0 bg-white rounded-b-md shadow-xl border-t border-gray-100 overflow-hidden z-50 text-left animate-fade-in">
+                        {suggestions.map((suggestion, index) => (
+                            <li 
+                                key={index}
+                                onClick={() => handleSelectSuggestion(suggestion)}
+                                className="px-6 py-3 hover:bg-gray-50 cursor-pointer text-gray-700 flex items-center gap-3 transition-colors"
+                            >
+                                <IoSearch className="text-gray-400" />
+                                {suggestion}
+                            </li>
+                        ))}
+                    </ul>
+                 )}
+             </div>
 
-                        </div>
-                    </div>
+             {/* FILTERS */}
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl mb-8">
+                 <div className="relative">
+                     <select 
+                        value={locationFilter}
+                        onChange={(e) => setLocationFilter(e.target.value)}
+                        className="w-full py-3 px-4 rounded-sm text-gray-600 bg-white border-none outline-none cursor-pointer text-center font-medium shadow-sm hover:bg-gray-50 appearance-none"
+                     >
+                         <option value="">-- Tất cả Địa điểm --</option>
+                         <option value="Hà Nội">Hà Nội</option>
+                         <option value="TP. Hồ Chí Minh">TP. Hồ Chí Minh</option>
+                         <option value="Đà Nẵng">Đà Nẵng</option>
+                         <option value="Lào Cai">Lào Cai</option>
+                     </select>
+                 </div>
 
-                </div>
-            </div>
+                 <div className="relative">
+                     <select 
+                        value={scaleFilter}
+                        onChange={(e) => setScaleFilter(e.target.value)}
+                        className="w-full py-3 px-4 rounded-sm text-gray-600 bg-white border-none outline-none cursor-pointer text-center font-medium shadow-sm hover:bg-gray-50 appearance-none"
+                     >
+                         <option value="">-- Tất cả Quy mô --</option>
+                         <option value="small">Nhóm nhỏ (&lt; 20 người)</option>
+                         <option value="medium">Vừa (20 - 100 người)</option>
+                         <option value="large">Lớn (&gt; 100 người)</option>
+                     </select>
+                 </div>
+             </div>
+
+             <button 
+                onClick={() => executeSearch()}
+                className="bg-[#bfd200] hover:bg-[#a3b800] text-black font-bold py-3 px-16 rounded shadow-lg transition-transform cursor-pointer transform hover:scale-105 text-lg uppercase tracking-wide"
+             >
+                 Tìm kiếm
+             </button>
+         </div>
+      </section>
+
+      {/*SECTION 2: List Event*/}
+      <section className="max-w-7xl mx-auto px-4 mt-12">
+        <div className="text-center mb-10">
+            <h2 className="text-2xl md:text-3xl font-bold text-green-700 inline-block border-b-4 border-green-500 pb-2">
+                Một số sự kiện dành cho bạn!
+            </h2>
+            {/* Hiển thị kết quả tìm kiếm nếu có */}
+            {(searchTerm || locationFilter) && (
+                <p className="text-gray-500 mt-2">
+                    Tìm thấy {events.length} kết quả 
+                    {searchTerm && ` cho "${searchTerm}"`}
+                    {locationFilter && ` tại "${locationFilter}"`}
+                </p>
+            )}
         </div>
-    );
+
+        {/* Grid Danh sách */}
+        {events.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {currentEvents.map(item => (
+                    <div key={item.id} className="animate-fade-in"> {/* Hiệu ứng hiện dần */}
+                        <EventCard 
+                            event={item} 
+                            onClick={handleCardClick} 
+                            // Lazy Load cho ảnh bên trong Card thì bạn sửa trong component EventCard nhé: <img loading="lazy" ... />
+                        />
+                    </div>
+                ))}
+            </div>
+        ) : (
+            <div className="text-center py-10 text-gray-500">
+                <p className="text-xl">Không tìm thấy sự kiện nào phù hợp.</p>
+            </div>
+        )}
+
+        {/* Prev / Next Buttons */}
+        {events.length > 0 && (
+            <div className="flex justify-center items-center mt-10 space-x-4">
+                {currentPage > 1 && (
+                    <button 
+                        onClick={handlePrevPage}
+                        className="px-6 py-2 border border-gray-300 rounded hover:bg-green-600 hover:text-white transition font-medium"
+                    >
+                        Trước
+                    </button>
+                )}
+                
+                <span className="text-gray-500 text-sm">Trang {currentPage} / {totalPages}</span>
+
+                {currentPage < totalPages && (
+                    <button 
+                        onClick={handleNextPage}
+                        className="px-6 py-2 border border-gray-300 rounded hover:bg-green-600 hover:text-white transition font-medium"
+                    >
+                        Sau
+                    </button>
+                )}
+            </div>
+        )}
+      </section>
+
+      {/* --- POPUP MODAL --- */}
+      <InfoEvent 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        event={selectedEvent}
+        userStatus={selectedEvent?.userStatus || 'guest'}
+        onRegister={handleRegister}
+        onJoinChat={handleJoinChat}
+      />
+
+    </div>
+  );
 };
 
-export default DashBoard;
+export default EventPage;

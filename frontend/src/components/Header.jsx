@@ -40,7 +40,7 @@ const Header = () => {
     setIsAuthenticated(!!token);
 
     if (token) {
-      // Thử lấy thông tin user từ localStorage (nếu lúc login bạn đã lưu)
+      // Thử lấy thông tin user từ localStorage
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
         setUser(JSON.parse(storedUser));

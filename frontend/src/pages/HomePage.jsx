@@ -17,7 +17,7 @@ const HomePage = () => {
     const stories = [
         {
             image: userStory1,
-            quote: "Tình nguyện giúp tôi cảm thấy sống có ích hơn. Tôi sẽ tiếp tục tình nguyện",
+            quote: "Tình nguyện giúp tôi cảm thấy sống có ích hơn. Tôi sẽ tiếp tục làm và làm tình nguyện để lan tỏa tinh thần đẹp đẽ này tới mọi người",
             name: "Bạn Thanh Tùng",
             info1: "K68I - CS1",
             info2: "Trường Đại học Công nghệ - ĐHQGHN"
@@ -25,14 +25,14 @@ const HomePage = () => {
         {
             image: userStory2,
             quote: "Trước đây, tôi luôn muốn tham gia nhưng không biết bắt đầu từ đâu. VolunteerHub đã làm tôi nghiện làm tình nguyện.",
-            name: "Bạn Nguyễn Đức Toàn",
+            name: "Bạn Đức Toàn",
             info1: "K68I - CS1",
             info2: "Trường Đại học Công nghệ - ĐHQGHN"
         },
         {
             image: userStory3,
             quote: "Từ một tình nguyện viên, tôi đã trở thành Quản lý sự kiện. Kỹ năng tổ chức và lãnh đạo tôi học được tại đây là vô giá.",
-            name: "Võ Minh Dũng",
+            name: "Bạn Minh Dũng",
             info1: "K68I - CS1",
             info2: "Trường Đại học Công nghệ - ĐHQGHN"
         }

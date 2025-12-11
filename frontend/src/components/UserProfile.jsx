@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { IoClose, IoPencil, IoSend } from "react-icons/io5";
 import Swal from 'sweetalert2';
-import ForgotPasswordModal from './ForgotPasswordModal';
+import ForgotPassword from './ForgotPassword';
 
 const UserProfile = ({ isOpen, onClose, user }) => {
   // --- STATES ---
@@ -212,7 +212,7 @@ const UserProfile = ({ isOpen, onClose, user }) => {
       </div>
 
       {/* Popup Quên Mật Khẩu (Nằm đè lên trên Popup Profile) */}
-      <ForgotPasswordModal 
+      <ForgotPassword 
         isOpen={isForgotPasswordOpen} 
         onClose={() => setIsForgotPasswordOpen(false)} 
       />
