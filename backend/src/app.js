@@ -18,13 +18,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/registrations', registrationRoutes);
 
-// DEV ONLY: Seed endpoint
-if (process.env.NODE_ENV === 'development') {
-  import('./seed.js').then(module => {
-    app.use('/api', module.default);
-    console.log('🌱 Seed endpoints enabled (development mode)');
-  });
-}
+
 
 // add example event :
 // curl -X POST http://localhost:8080/api/seed
