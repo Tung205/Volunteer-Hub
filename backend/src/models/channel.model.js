@@ -1,5 +1,5 @@
 // models/channel.model.js
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const ChannelSchema = new mongoose.Schema(
   {
@@ -20,4 +20,4 @@ const ChannelSchema = new mongoose.Schema(
 ChannelSchema.index({ eventId: 1 }, { unique: true });
 
 const Channel = mongoose.model('Channel', ChannelSchema);
-module.exports = Channel;
+export default Channel;

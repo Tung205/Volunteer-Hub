@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const AttachmentSchema = new mongoose.Schema(
   {
@@ -52,4 +52,4 @@ const PostSchema = new mongoose.Schema(
 PostSchema.index({ channelId: 1, createdAt: -1 });
 
 const Post = mongoose.model('Post', PostSchema);
-module.exports = Post;
+export default Post;
