@@ -274,11 +274,28 @@ export const EventService = {
         }
       }
       
+      // Rule 5: MANAGER chỉ được sửa 1 lần sau khi event được duyệt
+      if (currentEvent.status === 'OPENED' && currentEvent.editCount >= 1) {
+        const err = new Error('EDIT_LIMIT_EXCEEDED');
+        err.status = 400;
+        err.details = 'Sự kiện đã được sửa 1 lần. Không thể sửa thêm.';
+        throw err;
+      }
+      
+      // Rule 6: Nếu MANAGER sửa event đã OPENED → chuyển về PENDING để admin duyệt lại
+      if (currentEvent.status === 'OPENED' && !updateData.status) {
+        updateData.status = 'PENDING';
+        // Clear approval info khi cần duyệt lại
+        updateData.approvedBy = null;
+        updateData.approvedAt = null;
+      }
+      
       // 3. Update trong database
       const updatedEvent = await Event.findByIdAndUpdate(
         eventId,
         { 
-          $set: updateData
+          $set: updateData,
+          $inc: { editCount: 1 }  // Tăng số lần sửa
         },
         { 
           new: true,  // Return document sau khi update

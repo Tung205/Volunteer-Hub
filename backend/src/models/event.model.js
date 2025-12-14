@@ -69,6 +69,12 @@ const EventSchema = new mongoose.Schema(
       maxlength: 500,
     },
 
+    // Tracking số lần sửa (để admin biết event đã bị sửa bao nhiêu lần)
+    editCount: {
+      type: Number,
+      default: 0,
+    },
+
     // Hiển thị trên giao diện
     coverImageUrl: {     // Ảnh phía trái các card
       type: String,

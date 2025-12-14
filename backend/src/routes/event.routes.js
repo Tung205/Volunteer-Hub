@@ -22,7 +22,7 @@ router.post('/',
   EventController.createEvent
 );
 
-router.put('/:id',
+router.patch('/:id',
   isAuthenticated,
   hasRole('MANAGER', 'ADMIN'),
   canModifyEvent,
