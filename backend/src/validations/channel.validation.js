@@ -11,6 +11,20 @@ export const channelIdParamSchema = Joi.object({
   })
 });
 
+// Param validation cho post ID trong comments route
+export const postIdParamSchema = Joi.object({
+  cid: Joi.string().required().regex(/^[0-9a-fA-F]{24}$/).messages({
+    'string.empty': 'Channel ID không được để trống',
+    'any.required': 'Channel ID là bắt buộc',
+    'string.pattern.base': 'Channel ID không hợp lệ'
+  }),
+  pid: Joi.string().required().regex(/^[0-9a-fA-F]{24}$/).messages({
+    'string.empty': 'Post ID không được để trống',
+    'any.required': 'Post ID là bắt buộc',
+    'string.pattern.base': 'Post ID không hợp lệ'
+  })
+});
+
 // ==================== QUERY SCHEMAS ====================
 
 // Query validation cho GET /channels/:cid/posts
@@ -43,5 +57,15 @@ export const createPostBodySchema = Joi.object({
   }),
   attachments: Joi.array().items(attachmentSchema).max(10).default([]).messages({
     'array.max': 'Tối đa 10 attachments'
+  })
+});
+
+// Body validation cho POST /channels/:cid/posts/:pid/comments
+export const createCommentBodySchema = Joi.object({
+  content: Joi.string().trim().min(1).max(500).required().messages({
+    'string.empty': 'Nội dung bình luận không được để trống',
+    'string.min': 'Nội dung bình luận không được để trống',
+    'string.max': 'Nội dung bình luận không quá 500 ký tự',
+    'any.required': 'Nội dung bình luận là bắt buộc'
   })
 });
