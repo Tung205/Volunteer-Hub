@@ -37,5 +37,24 @@ export const UserController = {
       console.error('UserController.updateProfile error:', e);
       return res.status(500).json({ error: 'INTERNAL' });
     }
+  },
+
+  /**
+   * GET /users/:id
+   * Lấy profile rút gọn của user khác (MANAGER/ADMIN)
+   */
+  async getPublicProfile(req, res) {
+    try {
+      const { id } = req.params;
+      const user = await UserService.getPublicProfile(id);
+
+      return res.json({ user });
+    } catch (e) {
+      if (e.status) {
+        return res.status(e.status).json({ error: e.message });
+      }
+      console.error('UserController.getPublicProfile error:', e);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
   }
 };

@@ -58,5 +58,31 @@ export const UserService = {
       gender: user.gender,
       createdAt: user.createdAt
     };
+  },
+
+  /**
+   * Lấy profile rút gọn của user (cho MANAGER/ADMIN xem)
+   * @param {string} userId 
+   * @returns {Promise<Object>} - { id, email, name, roles, status }
+   */
+  async getPublicProfile(userId) {
+    const user = await User.findById(userId)
+      .select('_id email name roles status')
+      .lean();
+
+    if (!user) {
+      const error = new Error('USER_NOT_FOUND');
+      error.status = 404;
+      error.message = 'Không tìm thấy người dùng';
+      throw error;
+    }
+
+    return {
+      id: user._id,
+      email: user.email,
+      name: user.name,
+      roles: user.roles,
+      status: user.status
+    };
   }
 };

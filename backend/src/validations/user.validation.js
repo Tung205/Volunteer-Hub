@@ -1,6 +1,17 @@
 import Joi from 'joi';
 
 /**
+ * Schema cho validate user ID trong params
+ */
+export const userIdParamSchema = Joi.object({
+  id: Joi.string().hex().length(24).required().messages({
+    'string.hex': 'User ID không hợp lệ',
+    'string.length': 'User ID không hợp lệ',
+    'any.required': 'User ID là bắt buộc'
+  })
+});
+
+/**
  * Schema cho cập nhật profile
  * Fields cho phép: name, dateOfBirth, gender
  */

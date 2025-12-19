@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { UserController } from '../controllers/user.controller.js';
-import { isAuthenticated } from '../middlewares/auth.middleware.js';
+import { isAuthenticated, hasRole } from '../middlewares/auth.middleware.js';
 import { validate } from '../middlewares/validate.middleware.js';
-import { updateProfileSchema } from '../validations/user.validation.js';
+import { updateProfileSchema, userIdParamSchema } from '../validations/user.validation.js';
 
 const router = Router();
 
@@ -23,6 +23,19 @@ router.patch(
   isAuthenticated,
   validate(updateProfileSchema),
   UserController.updateProfile
+);
+
+/**
+ * GET /users/:id
+ * Lấy profile rút gọn của user khác
+ * Auth: isAuthenticated + MANAGER|ADMIN
+ */
+router.get(
+  '/:id',
+  isAuthenticated,
+  hasRole('MANAGER', 'ADMIN'),
+  validate(userIdParamSchema, 'params'),
+  UserController.getPublicProfile
 );
 
 export default router;
