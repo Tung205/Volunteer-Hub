@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { Event } from '../models/event.model.js';
 import { Registration } from '../models/registration.model.js';
 import Channel from '../models/channel.model.js';
+import Post from '../models/post.model.js';
 
 /**
  * Middleware xác thực user đã đăng nhập
@@ -289,6 +290,105 @@ export const isEventMember = async (req, res, next) => {
     next();
   } catch (error) {
     console.error('isEventMember error:', error);
+    return res.status(500).json({
+      error: 'INTERNAL',
+      message: 'Lỗi kiểm tra quyền truy cập'
+    });
+  }
+};
+
+/**
+ * Middleware kiểm tra user có phải là member của event (thông qua post)
+ * Flow: postId → Post → channelId → Channel → eventId → check member
+ * Dùng cho: POST /posts/:pid/comments
+ */
+export const isPostMember = async (req, res, next) => {
+  try {
+    const postId = req.params.pid;
+    const userId = req.user.id;
+    const userRoles = req.user.roles || [];
+
+    // Validate postId
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({
+        error: 'INVALID_POST_ID',
+        message: 'Post ID không hợp lệ'
+      });
+    }
+
+    // Find post to get channelId
+    const post = await Post.findById(postId).lean();
+
+    if (!post) {
+      return res.status(404).json({
+        error: 'POST_NOT_FOUND',
+        message: 'Không tìm thấy bài viết'
+      });
+    }
+
+    // Find channel to get eventId
+    const channel = await Channel.findById(post.channelId).lean();
+
+    if (!channel) {
+      return res.status(404).json({
+        error: 'CHANNEL_NOT_FOUND',
+        message: 'Không tìm thấy channel'
+      });
+    }
+
+    const eventId = channel.eventId;
+
+    // Find event to check organizer
+    const event = await Event.findById(eventId).lean();
+
+    if (!event) {
+      return res.status(404).json({
+        error: 'EVENT_NOT_FOUND',
+        message: 'Không tìm thấy sự kiện'
+      });
+    }
+
+    // Check if user is ADMIN
+    const isAdmin = userRoles.includes('ADMIN');
+    if (isAdmin) {
+      req.post = post;
+      req.channel = channel;
+      req.event = event;
+      return next();
+    }
+
+    // Check if user is Organizer
+    const isOrganizer = event.organizerId.toString() === userId;
+    if (isOrganizer) {
+      req.post = post;
+      req.channel = channel;
+      req.event = event;
+      return next();
+    }
+
+    // Check if user has APPROVED registration for this event
+    const registration = await Registration.findOne({
+      eventId: eventId,
+      volunteerId: userId,
+      status: 'APPROVED'
+    }).lean();
+
+    if (!registration) {
+      return res.status(403).json({
+        error: 'FORBIDDEN',
+        message: 'Bạn không phải là thành viên của sự kiện này'
+      });
+    }
+
+    // Attach to request for reuse
+    req.post = post;
+    req.channel = channel;
+    req.event = event;
+    req.registration = registration;
+
+    next();
+  } catch (error) {
+    console.error('isPostMember error:', error);
     return res.status(500).json({
       error: 'INTERNAL',
       message: 'Lỗi kiểm tra quyền truy cập'

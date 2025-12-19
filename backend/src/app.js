@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.routes.js';
 import eventRoutes from './routes/event.routes.js';
 import registrationRoutes from './routes/registration.routes.js';
 import channelRoutes from './routes/channel.routes.js';
+import postRoutes from './routes/post.routes.js';
 
 const app = express();
 app.use(helmet());
@@ -19,6 +20,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/registrations', registrationRoutes);
 app.use('/api/channels', channelRoutes);
+app.use('/api/posts', postRoutes);
 
 
 

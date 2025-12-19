@@ -4,10 +4,8 @@ import { isAuthenticated, isEventMember } from '../middlewares/auth.middleware.j
 import { validate } from '../middlewares/validate.middleware.js';
 import {
   channelIdParamSchema,
-  postIdParamSchema,
   getPostsQuerySchema,
-  createPostBodySchema,
-  createCommentBodySchema
+  createPostBodySchema
 } from '../validations/channel.validation.js';
 
 const router = Router();
@@ -38,20 +36,6 @@ router.post(
   validate(createPostBodySchema, 'body'),
   isEventMember,
   ChannelController.createPost
-);
-
-/**
- * POST /channels/:cid/posts/:pid/comments
- * Tạo bình luận cho bài viết
- * Auth: isAuthenticated + isEventMember
- */
-router.post(
-  '/:cid/posts/:pid/comments',
-  isAuthenticated,
-  validate(postIdParamSchema, 'params'),
-  validate(createCommentBodySchema, 'body'),
-  isEventMember,
-  ChannelController.createComment
 );
 
 export default router;
