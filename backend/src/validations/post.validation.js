@@ -22,3 +22,11 @@ export const createCommentBodySchema = Joi.object({
     'any.required': 'Nội dung bình luận là bắt buộc'
   })
 });
+
+// ==================== QUERY SCHEMAS ====================
+
+// Query validation cho GET /posts/:pid/comments
+export const getCommentsQuerySchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(50).default(10)
+});

@@ -23,5 +23,29 @@ export const PostController = {
       console.error('PostController.createComment error:', e);
       return res.status(500).json({ error: 'INTERNAL' });
     }
+  },
+
+  /**
+   * GET /posts/:pid/comments
+   * Lấy danh sách comments của post với phân trang
+   */
+  async getComments(req, res) {
+    try {
+      const { pid } = req.params;
+      const { page, limit } = req.query;
+
+      const result = await PostService.getCommentsByPost(pid, {
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 10
+      });
+
+      return res.json(result);
+    } catch (e) {
+      if (e.status) {
+        return res.status(e.status).json({ error: e.message });
+      }
+      console.error('PostController.getComments error:', e);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
   }
 };

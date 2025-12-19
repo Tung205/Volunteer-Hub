@@ -4,10 +4,25 @@ import { isAuthenticated, isPostMember } from '../middlewares/auth.middleware.js
 import { validate } from '../middlewares/validate.middleware.js';
 import {
   postIdParamSchema,
-  createCommentBodySchema
+  createCommentBodySchema,
+  getCommentsQuerySchema
 } from '../validations/post.validation.js';
 
 const router = Router();
+
+/**
+ * GET /posts/:pid/comments
+ * Lấy danh sách comments của post với phân trang
+ * Auth: isAuthenticated + isPostMember
+ */
+router.get(
+  '/:pid/comments',
+  isAuthenticated,
+  validate(postIdParamSchema, 'params'),
+  validate(getCommentsQuerySchema, 'query'),
+  isPostMember,
+  PostController.getComments
+);
 
 /**
  * POST /posts/:pid/comments
