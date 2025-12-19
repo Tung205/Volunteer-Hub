@@ -17,11 +17,15 @@ export const registerSchema = Joi.object({
     'any.required': 'Mật khẩu là bắt buộc'
   }),
 
-  name: Joi.string().allow('').default(''),
-  dateOfBirth: Joi.date().less('now').messages({
-    'date.less': 'Ngày sinh phải trước ngày hiện tại'
+  name: Joi.string().trim().max(100).allow('').default('').messages({
+    'string.max': 'Tên không được vượt quá 100 ký tự'
   }),
-  gender: Joi.string().valid('Nam', 'Nữ', 'Khác').default('Khác')
+  dateOfBirth: Joi.date().max('now').messages({
+    'date.max': 'Ngày sinh không được là ngày tương lai'
+  }),
+  gender: Joi.string().valid('Nam', 'Nữ', 'Khác').default('Khác').messages({
+    'any.only': 'Giới tính phải là Nam, Nữ hoặc Khác'
+  })
 });
 
 export const loginSchema = Joi.object({
