@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Post from '../models/post.model.js';
 import Comment from '../models/comment.model.js';
+import Like from '../models/like.model.js';
 
 export const PostService = {
   /**
@@ -91,6 +92,55 @@ export const PostService = {
         hasNext: page < totalPages,
         hasPrev: page > 1
       }
+    };
+  },
+
+  /**
+   * Like một post (idempotent - nếu đã like thì trả về success mà không tăng counter)
+   * @param {string} postId 
+   * @param {string} userId 
+   * @returns {Promise<Object>} - { liked: true, likes: <count> }
+   */
+  async likePost(postId, userId) {
+    // Kiểm tra post tồn tại
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      const error = new Error('INVALID_POST_ID');
+      error.status = 400;
+      error.message = 'Post ID không hợp lệ';
+      throw error;
+    }
+
+    const post = await Post.findById(postId).lean();
+    if (!post) {
+      const error = new Error('POST_NOT_FOUND');
+      error.status = 404;
+      error.message = 'Không tìm thấy bài viết';
+      throw error;
+    }
+
+    // Check xem đã like chưa
+    const existingLike = await Like.findOne({ postId, userId }).lean();
+
+    if (existingLike) {
+      // Đã like rồi → trả về success (idempotent)
+      return {
+        liked: true,
+        likes: post.likes
+      };
+    }
+
+    // Tạo like record và tăng counter
+    await Like.create({ postId, userId });
+    
+    const updatedPost = await Post.findByIdAndUpdate(
+      postId,
+      { $inc: { likes: 1 } },
+      { new: true }
+    ).lean();
+
+    return {
+      liked: true,
+      likes: updatedPost.likes
     };
   }
 };

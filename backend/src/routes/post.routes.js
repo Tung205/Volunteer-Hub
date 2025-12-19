@@ -38,4 +38,17 @@ router.post(
   PostController.createComment
 );
 
+/**
+ * POST /posts/:pid/like
+ * Like một bài viết
+ * Auth: isAuthenticated + isPostMember
+ */
+router.post(
+  '/:pid/like',
+  isAuthenticated,
+  validate(postIdParamSchema, 'params'),
+  isPostMember,
+  PostController.likePost
+);
+
 export default router;

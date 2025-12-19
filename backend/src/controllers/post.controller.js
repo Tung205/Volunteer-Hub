@@ -47,5 +47,26 @@ export const PostController = {
       console.error('PostController.getComments error:', e);
       return res.status(500).json({ error: 'INTERNAL' });
     }
+  },
+
+  /**
+   * POST /posts/:pid/like
+   * Like một bài viết
+   */
+  async likePost(req, res) {
+    try {
+      const { pid } = req.params;
+      const userId = req.user.id;
+
+      const result = await PostService.likePost(pid, userId);
+
+      return res.json(result);
+    } catch (e) {
+      if (e.status) {
+        return res.status(e.status).json({ error: e.message });
+      }
+      console.error('PostController.likePost error:', e);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
   }
 };
