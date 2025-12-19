@@ -1,186 +1,13 @@
-// /**
-//  * SEED DATA FOR DEVELOPMENT
-//  * File này chỉ dùng để tạo dữ liệu test
-//  * Xóa file này khi deploy production
-//  */
-
-// import express from 'express';
-// import bcrypt from 'bcryptjs';
-// import { User } from './models/user.model.js';
-// import { Event } from './models/event.model.js';
-
-// const seedRouter = express.Router();
-
-// seedRouter.post('/seed', async (req, res) => {
-//   // Only allow in development mode
-//   if (process.env.NODE_ENV !== 'development') {
-//     return res.status(403).json({ 
-//       error: 'FORBIDDEN', 
-//       message: 'Seed endpoint is only available in development mode' 
-//     });
-//   }
-
-//   try {
-//     // Tạo user mẫu
-//     const hashedPassword = await bcrypt.hash('123456', 10);
-    
-//     let user = await User.findOne({ email: 'admin@test.com' });
-//     if (!user) {
-//       user = await User.create({
-//         email: 'admin@test.com',
-//         passwordHash: hashedPassword,
-//         name: 'Admin Test',
-//         roles: ['VOLUNTEER', 'MANAGER', 'ADMIN'],
-//       });
-//     }
-    
-//     // Tạo thêm user MANAGER để test
-//     let manager = await User.findOne({ email: 'manager@test.com' });
-//     if (!manager) {
-//       manager = await User.create({
-//         email: 'manager@test.com',
-//         passwordHash: hashedPassword,
-//         name: 'Manager Test',
-//         roles: ['MANAGER'],
-//       });
-//     }
-
-//     // Tạo events mẫu theo model mới
-//     const eventsData = [
-//       {
-//         title: 'Dọn Dẹp Bãi Biển Mỹ Khê 🏖️',
-//         description: 'Cùng nhau làm sạch bãi biển Mỹ Khê. Hoạt động bao gồm nhặt rác, phân loại và tái chế.',
-//         location: 'Đà Nẵng',
-//         address: 'Bãi biển Mỹ Khê',
-//         startTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-//         endTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000),
-//         organizerId: user._id,
-//         organizerName: user.name,
-//         maxParticipants: 50,
-//         currentParticipants: 15,
-//         status: 'OPENED',
-//         coverImageUrl: 'https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=800'
-//       },
-//       {
-//         title: 'Trồng Cây Xanh Công Viên 🌳',
-//         description: 'Chương trình trồng 100 cây xanh. Tạo không gian xanh cho thành phố.',
-//         location: 'Đà Nẵng',
-//         address: 'Công viên 29/3',
-//         startTime: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-//         endTime: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000),
-//         organizerId: manager._id,
-//         organizerName: manager.name,
-//         maxParticipants: 30,
-//         currentParticipants: 8,
-//         status: 'OPENED',
-//         coverImageUrl: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800'
-//       },
-//       {
-//         title: 'Phát Cơm Từ Thiện 🍲',
-//         description: 'Phát 200 suất ăn miễn phí cho người vô gia cư.',
-//         location: 'Đà Nẵng',
-//         address: 'Trung tâm Cộng đồng, Hải Châu',
-//         startTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-//         endTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000),
-//         organizerId: user._id,
-//         organizerName: user.name,
-//         maxParticipants: 20,
-//         currentParticipants: 18,
-//         status: 'OPENED',
-//         coverImageUrl: 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800'
-//       },
-//       {
-//         title: 'Dạy Tiếng Anh Miễn Phí 📚',
-//         description: 'Chương trình dạy tiếng Anh cơ bản cho trẻ em vùng khó khăn.',
-//         location: 'Hà Nội',
-//         address: 'Trung tâm Văn hóa Thanh niên',
-//         startTime: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
-//         endTime: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000),
-//         organizerId: manager._id,
-//         organizerName: manager.name,
-//         maxParticipants: 15,
-//         currentParticipants: 10,
-//         status: 'OPENED',
-//         coverImageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800'
-//       }
-//     ];
-
-//     // Xóa events cũ của users test
-//     await Event.deleteMany({ 
-//       organizerId: { $in: [user._id, manager._id] } 
-//     });
-
-//     // Tạo events mới
-//     const createdEvents = await Event.insertMany(eventsData);
-
-//     res.json({
-//       success: true,
-//       message: `✅ Đã tạo ${createdEvents.length} events mẫu`,
-//       data: {
-//         users: [
-//           { email: 'admin@test.com', password: '123456', roles: user.roles },
-//           { email: 'manager@test.com', password: '123456', roles: manager.roles }
-//         ],
-//         eventsCreated: createdEvents.length,
-//         events: createdEvents.map(e => ({
-//           id: e._id,
-//           title: e.title,
-//           status: e.status,
-//           startTime: e.startTime
-//         }))
-//       }
-//     });
-
-//   } catch (error) {
-//     console.error('Seed error:', error);
-//     res.status(500).json({
-//       success: false,
-//       error: error.message
-//     });
-//   }
-// });
-
-// // Endpoint để xóa tất cả dữ liệu test
-// seedRouter.delete('/seed', async (req, res) => {
-//   // Only allow in development mode
-//   if (process.env.NODE_ENV !== 'development') {
-//     return res.status(403).json({ 
-//       error: 'FORBIDDEN', 
-//       message: 'Seed endpoint is only available in development mode' 
-//     });
-//   }
-
-//   try {
-//     const users = await User.find({ 
-//       email: { $in: ['admin@test.com', 'manager@test.com'] } 
-//     });
-    
-//     const userIds = users.map(u => u._id);
-    
-//     await Event.deleteMany({ organizerId: { $in: userIds } });
-//     await User.deleteMany({ _id: { $in: userIds } });
-
-//     res.json({
-//       success: true,
-//       message: '✅ Đã xóa tất cả dữ liệu test'
-//     });
-//   } catch (error) {
-//     res.status(500).json({
-//       success: false,
-//       error: error.message
-//     });
-//   }
-// });
-
-// export default seedRouter;
-
-
 
 //seed.js
 import bcrypt from 'bcryptjs';
 import { User } from './models/user.model.js';
 import { Event } from './models/event.model.js';
 import { Registration } from './models/registration.model.js';
+import Channel from './models/channel.model.js';
+import Post from './models/post.model.js';
+import Comment from './models/comment.model.js';
+import Like from './models/like.model.js';
 
 function randomFromArray(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -194,6 +21,10 @@ export async function seedDatabase() {
     User.deleteMany({}),
     Event.deleteMany({}),
     Registration.deleteMany({}),
+    Channel.deleteMany({}),
+    Post.deleteMany({}),
+    Comment.deleteMany({}),
+    Like.deleteMany({}),
   ]);
 
   // ==== 1. USERS ====
@@ -329,5 +160,99 @@ export async function seedDatabase() {
     );
   }
 
+  // ==== 4. CHANNELS (cho mỗi event OPENED) ====
+  const channels = [];
+  for (const event of events) {
+    const channel = await Channel.create({
+      eventId: event._id,
+    });
+    channels.push({ channel, event });
+  }
+
+  // ==== 5. POSTS (2-3 posts cho 5 channels đầu) ====
+  const postContents = [
+    'Chào mọi người! Rất vui được tham gia sự kiện này 🎉',
+    'Mình có thể đến sớm 30 phút để chuẩn bị được không ạ?',
+    'Cảm ơn ban tổ chức đã tạo cơ hội cho chúng mình!',
+    'Hôm nay thời tiết đẹp quá, rất mong chờ sự kiện!',
+    'Mọi người nhớ mang theo nước uống nhé!',
+  ];
+
+  const posts = [];
+  for (let i = 0; i < 5 && i < channels.length; i++) {
+    const { channel } = channels[i];
+    
+    // Lấy volunteers đã APPROVED cho event này
+    const approvedRegs = registrations.filter(
+      r => r.eventId.toString() === channel.eventId.toString() && 
+           (r.status === 'APPROVED' || r.status === 'COMPLETED')
+    );
+    
+    // Tạo 2-3 posts cho mỗi channel
+    const numPosts = 2 + Math.floor(Math.random() * 2);
+    for (let j = 0; j < numPosts; j++) {
+      const author = approvedRegs.length > 0 
+        ? volunteers.find(v => v._id.toString() === approvedRegs[j % approvedRegs.length]?.volunteerId.toString()) || manager
+        : manager;
+      
+      const post = await Post.create({
+        channelId: channel._id,
+        authorId: author._id,
+        content: randomFromArray(postContents),
+        attachments: [],
+        likes: 0,
+      });
+      posts.push(post);
+    }
+  }
+
+  // ==== 6. COMMENTS (2-4 comments cho mỗi post) ====
+  const commentContents = [
+    'Đồng ý ạ!',
+    'Mình cũng thế 😊',
+    'Tuyệt vời quá!',
+    'Cảm ơn bạn đã chia sẻ!',
+    'Mình sẽ nhớ!',
+    'Hay quá!',
+  ];
+
+  for (const post of posts) {
+    const numComments = 2 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < numComments; i++) {
+      const author = randomFromArray([...volunteers, manager]);
+      await Comment.create({
+        postId: post._id,
+        authorId: author._id,
+        content: randomFromArray(commentContents),
+      });
+    }
+  }
+
+  // ==== 7. LIKES (random likes cho posts) ====
+  for (const post of posts) {
+    const likers = volunteers.filter(() => Math.random() > 0.5);
+    for (const liker of likers) {
+      await Like.create({
+        postId: post._id,
+        userId: liker._id,
+      });
+    }
+    // Update likes count
+    const likeCount = await Like.countDocuments({ postId: post._id });
+    await Post.updateOne({ _id: post._id }, { $set: { likes: likeCount } });
+  }
+
   console.log('✅ Seed done!');
+  console.log(`   - Users: 5`);
+  console.log(`   - Events: ${events.length}`);
+  console.log(`   - Registrations: ${registrations.length}`);
+  console.log(`   - Channels: ${channels.length}`);
+  console.log(`   - Posts: ${posts.length}`);
 }
+
+/* Restart database
+docker compose exec mongo mongosh -u root -p root123 \
+  --authenticationDatabase admin volunteerhub \
+  --quiet --eval "db.dropDatabase()"
+docker compose restart backend && sleep 5 && docker compose logs backend --tail=20
+*/
