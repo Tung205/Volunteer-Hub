@@ -142,5 +142,52 @@ export const PostService = {
       liked: true,
       likes: updatedPost.likes
     };
+  },
+
+  /**
+   * Unlike một post (idempotent - nếu chưa like thì trả về success)
+   * @param {string} postId 
+   * @param {string} userId 
+   * @returns {Promise<Object>} - { liked: false, likes: <count> }
+   */
+  async unlikePost(postId, userId) {
+    // Kiểm tra post tồn tại
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      const error = new Error('INVALID_POST_ID');
+      error.status = 400;
+      error.message = 'Post ID không hợp lệ';
+      throw error;
+    }
+
+    const post = await Post.findById(postId).lean();
+    if (!post) {
+      const error = new Error('POST_NOT_FOUND');
+      error.status = 404;
+      error.message = 'Không tìm thấy bài viết';
+      throw error;
+    }
+
+    // Xóa like record nếu có
+    const deleted = await Like.findOneAndDelete({ postId, userId });
+
+    // Nếu đã xóa được → giảm counter
+    if (deleted) {
+      const updatedPost = await Post.findByIdAndUpdate(
+        postId,
+        { $inc: { likes: -1 } },
+        { new: true }
+      ).lean();
+
+      return {
+        liked: false,
+        likes: updatedPost.likes
+      };
+    }
+
+    // Chưa like → trả về success (idempotent)
+    return {
+      liked: false,
+      likes: post.likes
+    };
   }
 };

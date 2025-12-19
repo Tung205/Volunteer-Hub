@@ -51,4 +51,17 @@ router.post(
   PostController.likePost
 );
 
+/**
+ * DELETE /posts/:pid/like
+ * Bỏ like một bài viết
+ * Auth: isAuthenticated + isPostMember
+ */
+router.delete(
+  '/:pid/like',
+  isAuthenticated,
+  validate(postIdParamSchema, 'params'),
+  isPostMember,
+  PostController.unlikePost
+);
+
 export default router;
