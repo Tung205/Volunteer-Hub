@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import { saveSubscription } from '../services/subscription.service.js';
+
 const router = express.Router();
-const { saveSubscription } = require('../services/subscription.service');
 
 // Đăng ký subscription mới
 router.post('/', async (req, res) => {
@@ -16,4 +17,4 @@ router.post('/', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
