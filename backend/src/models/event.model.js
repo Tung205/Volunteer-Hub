@@ -69,6 +69,12 @@ const EventSchema = new mongoose.Schema(
       maxlength: 500,
     },
 
+    // Tracking số lần sửa (để admin biết event đã bị sửa bao nhiêu lần)
+    editCount: {
+      type: Number,
+      default: 0,
+    },
+
     // Hiển thị trên giao diện
     coverImageUrl: {     // Ảnh phía trái các card
       type: String,
@@ -86,18 +92,36 @@ const EventSchema = new mongoose.Schema(
 );
 
 // Tự động tạo searchText trước khi save
-EventSchema.pre('save', function (next) {
-  this.searchText = [
-    this.title,
-    this.location,
-    // this.category,
-    // (this.tags || []).join(' '),
-    this.description,
-  ]
-    .filter(Boolean)
-    .join(' ');
-  next();
-});
+// EventSchema.pre('save', function (next) {
+//   this.searchText = [
+//     this.title,
+//     this.location,
+//     this.category,
+//     (this.tags || []).join(' '),
+//     this.description,
+//   ]
+//     .filter(Boolean)
+//     .join(' ');
+//   next();
+// });
+
+// Compound text index cho full-text search
+EventSchema.index(
+  { 
+    title: 'text', 
+    description: 'text', 
+    location: 'text' 
+  },
+  {
+    weights: {
+      title: 10,       // Match trong title ưu tiên cao nhất
+      location: 5,     // Match trong location ưu tiên trung bình  
+      description: 1   // Match trong description ưu tiên thấp
+    },
+    name: 'event_text_search',
+    default_language: 'none'  // Tắt stemming để hỗ trợ tiếng Việt tốt hơn
+  }
+);
 
 // Index cho text search
 EventSchema.index({ searchText: 'text' });

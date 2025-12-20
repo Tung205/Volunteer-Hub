@@ -45,6 +45,10 @@ export async function seedDatabase() {
     User.deleteMany({}),
     Event.deleteMany({}),
     Registration.deleteMany({}),
+    Channel.deleteMany({}),
+    Post.deleteMany({}),
+    Comment.deleteMany({}),
+    Like.deleteMany({}),
   ]);
 
   // =====================
