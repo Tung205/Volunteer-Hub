@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { FaCalculator, FaClock, FaUserCog, FaTimesCircle } from "react-icons/fa";
 import Swal from 'sweetalert2';
-import CreateEventModal from '../CreateEvent';
+import CreateEvent from '../CreateEvent';
 import MyEvents from '../MyEvents';
 import { MOCK_PENDING_DATA } from '../../data/mockData';
 
 const ManagerView = () => {
     const [managerPendingList, setManagerPendingList] = useState(MOCK_PENDING_DATA.MANAGER);
-    const [showCreateEventModal, setShowCreateEventModal] = useState(false);
+    const [showCreateEvent, setShowCreateEvent] = useState(false);
     const [showMyEventsModal, setShowMyEventsModal] = useState(false);
     const [showPendingListModal, setShowPendingListModal] = useState(false);
     const [managerTab, setManagerTab] = useState('MANAGING');
@@ -52,7 +52,7 @@ const ManagerView = () => {
 
                 {/* Card 3: Create Event (Role) */}
                 <div
-                    onClick={() => setShowCreateEventModal(true)}
+                    onClick={() => setShowCreateEvent(true)}
                     className="bg-green-200 rounded-[20px] p-6 flex flex-col items-center justify-center shadow-sm relative overflow-hidden cursor-pointer hover:bg-green-100 transition"
                 >
                     <div className="bg-green-500 p-3 rounded-full absolute top-4 left-4 shadow-sm text-white">
@@ -68,7 +68,7 @@ const ManagerView = () => {
             </div>
 
             {/* Modals */}
-            <CreateEventModal isOpen={showCreateEventModal} onClose={() => setShowCreateEventModal(false)} />
+            <CreateEvent isOpen={showCreateEvent} onClose={() => setShowCreateEvent(false)} />
             <MyEvents isOpen={showMyEventsModal} onClose={() => setShowMyEventsModal(false)} />
 
             {/* Pending List Modal */}
