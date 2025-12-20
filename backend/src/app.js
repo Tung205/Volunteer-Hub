@@ -21,23 +21,6 @@ app.use('/api/events', eventRoutes);
 app.use('/api/registrations', registrationRoutes);
 app.use('/api/seed', seedRouter);
 
-// DEV ONLY: Seed endpoint
-// if (process.env.NODE_ENV === 'development') {
-// import('./seed.js').then(module => {
-//   app.use('/api', module.default);
-//   console.log('🌱 Seed endpoints enabled (development mode)');
-// });
-// // }
-
-// add example event :
-// curl -X POST http://localhost:8080/api/seed
-
-/*
-# 5. Xem events
-docker compose exec mongo mongosh -u root -p root123 --authenticationDatabase admin volunteerhub --eval "db.events.find().pretty()"
-# 8. Xem users
-docker compose exec mongo mongosh -u root -p root123 --authenticationDatabase admin volunteerhub --eval "db.users.find().pretty()"
-*/
 
 // error cuối
 app.use((err, _req, res, _next) => {

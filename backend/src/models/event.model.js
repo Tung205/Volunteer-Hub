@@ -73,6 +73,12 @@ const EventSchema = new mongoose.Schema(
     coverImageUrl: {     // Ảnh phía trái các card
       type: String,
     },
+
+    searchText: {
+      type: String,
+      default: "",
+      select: false,
+    }
   },
   {
     timestamps: true,    // createdAt, updatedAt
@@ -84,8 +90,8 @@ EventSchema.pre('save', function (next) {
   this.searchText = [
     this.title,
     this.location,
-    this.category,
-    (this.tags || []).join(' '),
+    // this.category,
+    // (this.tags || []).join(' '),
     this.description,
   ]
     .filter(Boolean)

@@ -34,8 +34,8 @@ const InfoEvent = ({
     startTime,
     organizerName,
     description,
-    image
-  } = displayEvent;
+    coverImageUrl,
+  } = event;
 
   let formattedDate = "Chưa cập nhật";
   try {
@@ -114,11 +114,11 @@ const InfoEvent = ({
           <div className="flex flex-col md:flex-row gap-6 items-stretch">
 
             <div className="w-full md:w-5/12 flex-shrink-0">
-              <img
-                src={image || "https://placehold.co/600x400?text=No+Image"}
-                alt={title}
-                className="w-full h-[220px] md:h-full object-cover rounded-xl shadow-md border border-gray-100"
-              />
+                <img 
+                  src={coverImageUrl || "https://placehold.co/600x400?text=No+Image"}
+                  alt={title} 
+                  className="w-full h-[220px] md:h-full object-cover rounded-xl shadow-md border border-gray-100" 
+                />
             </div>
 
             {/*Summary */}

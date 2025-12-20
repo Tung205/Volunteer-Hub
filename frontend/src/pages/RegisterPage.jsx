@@ -63,7 +63,7 @@ function RegisterPage() {
     const [isLoading, setIsLoading] = useState(false);
 
     const { register, handleSubmit, formState: { errors } } = useForm({
-        resolver: zodResolver(registerSchema),
+        // resolver: zodResolver(registerSchema),
         mode: "onBlur"
     });
 

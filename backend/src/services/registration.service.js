@@ -358,3 +358,24 @@ export const RegistrationService = {
     }
   }
 };
+
+export const getMyRegistrationStatus = async (eventId, volunteerId) => {
+  // nếu guest thì caller sẽ không truyền volunteerId
+  if (!volunteerId) return { status: "NONE" };
+
+  // validate ObjectId cho chắc (optional)
+  if (!mongoose.Types.ObjectId.isValid(eventId) || !mongoose.Types.ObjectId.isValid(volunteerId)) {
+    return { status: "NONE" };
+  }
+
+  const reg = await Registration.findOne({
+    eventId,
+    volunteerId,
+  })
+    .select("status")
+    .lean();
+
+  if (!reg) return { status: "NONE" };
+
+  return { status: reg.status }; // 'PENDING' | 'APPROVED' | ...
+};
