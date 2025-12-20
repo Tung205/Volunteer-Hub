@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FaTimesCircle, FaHistory, FaCalendarCheck, FaMapMarkerAlt, FaCalendarAlt } from "react-icons/fa";
 
 // Mock Data
@@ -14,10 +15,16 @@ const MY_EVENTS = [
 
 const MyEvents = ({ isOpen, onClose }) => {
     const [activeTab, setActiveTab] = useState('UPCOMING'); // 'UPCOMING' | 'PAST'
+    const navigate = useNavigate();
 
     if (!isOpen) return null;
 
     const displayedEvents = MY_EVENTS.filter(evt => evt.type === activeTab);
+
+    const handleEventClick = (eventId) => {
+        onClose(); // Đóng modal trước
+        navigate(`/group/${eventId}`); // Chuyển trang
+    };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
@@ -53,7 +60,11 @@ const MyEvents = ({ isOpen, onClose }) => {
                 <div className="p-4 overflow-y-auto flex-1 bg-gray-50 space-y-3 custom-scrollbar">
                     {displayedEvents.length > 0 ? (
                         displayedEvents.map(event => (
-                            <div key={event.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition">
+                            <div
+                                key={event.id}
+                                onClick={() => handleEventClick(event.id)}
+                                className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer hover:border-green-300"
+                            >
                                 <h4 className="font-bold text-green-700 text-base mb-1">{event.title}</h4>
                                 <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
                                     <span className="flex items-center gap-1"><FaMapMarkerAlt /> {event.location}</span>
