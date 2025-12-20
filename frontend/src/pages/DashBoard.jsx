@@ -9,6 +9,7 @@ import RecentActivities from '../components/dashboard/RecentActivities';
 
 // --- MAIN COMPONENT ---
 const DashBoard = () => {
+    console.log("DASHBOARD LAYOUT UPDATED v2 - PLEASE CHECK CONSOLE");
     const navigate = useNavigate();
     const [currentUserRole, setCurrentUserRole] = useState('TNV'); // 'TNV' | 'MANAGER' | 'ADMIN'
     const [userName, setUserName] = useState("Nguyễn Văn A");
@@ -60,18 +61,18 @@ const DashBoard = () => {
                 {/* Main Content Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                    {/* Left Column (Activities & Role View) */}
+                    {/* Left Column (Featured - Wide) */}
                     <div className="lg:col-span-2 space-y-8 animate-slide-right">
                         {/* Dynamic Role View */}
                         {renderRoleView()}
 
-                        {/* Recent Activities */}
-                        <RecentActivities currentUserRole={currentUserRole} />
+                        {/* Featured Activities */}
+                        <FeaturedActivities />
                     </div>
 
-                    {/* Right Column (Featured) */}
-                    <div className="lg:col-span-1 animate-slide-left h-full">
-                        <FeaturedActivities />
+                    {/* Right Column (Recent - Narrow) */}
+                    <div className="lg:col-span-1 animate-slide-left h-full flex flex-col">
+                        <RecentActivities currentUserRole={currentUserRole} />
                     </div>
                 </div>
             </div>

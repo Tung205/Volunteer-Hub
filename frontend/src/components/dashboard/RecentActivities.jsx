@@ -34,7 +34,7 @@ const RecentActivities = ({ currentUserRole }) => {
     };
 
     return (
-        <div className="bg-gradient-to-b from-green-100 to-white rounded-[20px] p-6 md:p-8 shadow-sm min-h-[400px]">
+        <div className="bg-gradient-to-b from-green-100 to-white rounded-[20px] p-6 md:p-8 shadow-sm min-h-[400px] h-full flex-1">
             <div className="flex justify-between items-center mb-6 border-b pb-4">
                 <h2 className="text-xl font-bold text-gray-800">Hoạt động gần đây</h2>
 
