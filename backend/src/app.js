@@ -2,6 +2,7 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
+import { globalLimiter } from './middlewares/rateLimit.middleware.js';
 
 
 import authRoutes from './routes/auth.routes.js';
@@ -13,7 +14,9 @@ import userRoutes from './routes/user.routes.js';
 import subscriptionRoutes from './routes/subscription.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 
+
 const app = express();
+app.use(globalLimiter);
 app.use(helmet());
 app.use(cors({ origin: process.env.CORS_ORIGIN?.split(',') || true, credentials: true }));
 app.use(express.json());

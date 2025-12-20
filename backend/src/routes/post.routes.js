@@ -7,6 +7,7 @@ import {
   createCommentBodySchema,
   getCommentsQuerySchema
 } from '../validations/post.validation.js';
+import { actionLimiter } from '../middlewares/rateLimit.middleware.js';
 
 const router = Router();
 
@@ -32,6 +33,7 @@ router.get(
 router.post(
   '/:pid/comments',
   isAuthenticated,
+  actionLimiter,
   validate(postIdParamSchema, 'params'),
   validate(createCommentBodySchema, 'body'),
   isPostMember,
@@ -46,6 +48,7 @@ router.post(
 router.post(
   '/:pid/like',
   isAuthenticated,
+  actionLimiter,
   validate(postIdParamSchema, 'params'),
   isPostMember,
   PostController.likePost
