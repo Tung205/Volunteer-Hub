@@ -59,10 +59,10 @@ const DashBoard = () => {
         <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans">
             <div className="max-w-7xl mx-auto space-y-8">
                 {/* Main Content Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch min-h-[1050px]">
 
                     {/* Left Column (Featured - Wide) */}
-                    <div className="lg:col-span-2 space-y-8 animate-slide-right">
+                    <div className="lg:col-span-2 space-y-8 animate-slide-right flex flex-col h-full">
                         {/* Dynamic Role View */}
                         {renderRoleView()}
 
@@ -72,7 +72,10 @@ const DashBoard = () => {
 
                     {/* Right Column (Recent - Narrow) */}
                     <div className="lg:col-span-1 animate-slide-left h-full flex flex-col">
-                        <RecentActivities currentUserRole={currentUserRole} />
+                        <RecentActivities
+                            currentUserRole={currentUserRole}
+                            className="h-full flex-1"
+                        />
                     </div>
                 </div>
             </div>

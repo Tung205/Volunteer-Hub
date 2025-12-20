@@ -35,8 +35,23 @@ const FeaturedActivities = () => {
         const fetchEvents = async () => {
             setLoading(true);
             try {
-                const data = await getFeaturedEvents(filterFeatured);
-                setEvents(data);
+                // --- MOCK DATA FOR TESTING LAYOUT (6 ITEMS) ---
+                const MOCK_TEST_EVENTS = Array(6).fill(null).map((_, index) => ({
+                    _id: `mock-${index}`,
+                    title: `Sự kiện Test Giao diện #${index + 1}`,
+                    location: "Hoạt động Ngoại khóa",
+                    startTime: new Date().toISOString(),
+                    coverImageUrl: "https://placehold.co/600x400?text=Event+" + (index + 1),
+                    organizerId: { name: "Admin Test" }
+                }));
+
+                // Simulate API delay
+                await new Promise(resolve => setTimeout(resolve, 500));
+                setEvents(MOCK_TEST_EVENTS);
+
+                // Original API call (Commented out for test)
+                // const data = await getFeaturedEvents(filterFeatured, 6);
+                // setEvents(data);
             } catch (error) {
                 console.error("Failed to load events", error);
             } finally {
@@ -78,7 +93,7 @@ const FeaturedActivities = () => {
     };
 
     return (
-        <div className="bg-gradient-to-b from-green-100 to-white border border-green-200 shadow-sm rounded-[20px] p-6 h-full flex flex-col overflow-hidden">
+        <div className="bg-gradient-to-b from-green-100 to-white border border-green-200 shadow-sm rounded-[20px] p-6 flex flex-col overflow-hidden flex-1 h-full">
             {/* Header & Filter */}
             <div className="relative mb-6">
                 <div className="flex flex-col items-center justify-center">

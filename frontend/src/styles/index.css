@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @layer components {
-     .underline-animated {
+    .underline-animated {
         @apply inline-block relative;
         @apply text-gray-800 transition-colors duration-300;
         @apply hover:text-green-600;
@@ -23,7 +23,8 @@
     .roboto-bold {
         font-family: "Roboto", sans-serif;
         font-optical-sizing: auto;
-        font-weight: 700; /* bold */
+        font-weight: 700;
+        /* bold */
         font-style: normal;
         font-variation-settings: "wdth" 100;
     }
@@ -31,7 +32,8 @@
     .roboto-light {
         font-family: "Roboto", sans-serif;
         font-optical-sizing: auto;
-        font-weight: 300; /* light */
+        font-weight: 300;
+        /* light */
         font-style: normal;
         font-variation-settings: "wdth" 100;
     }
@@ -46,4 +48,15 @@
 body {
     font-family: var(--font-primary);
     font-weight: var(--font-weight-normal);
+}
+
+@layer base {
+
+    html,
+    body,
+    #root {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
 }
