@@ -122,46 +122,6 @@ const UserProfile = ({ isOpen, onClose, user }) => {
               <p className="text-gray-500 text-sm">{user.email}</p>
             </div>
 
-            {/* 2. Yêu cầu Manager (Chỉ hiện nếu là TNV) */}
-            {(user.role === 'TNV' || user.role === 'VOLUNTEER') && (
-              <div className="bg-blue-50 p-4 rounded-xl flex flex-col gap-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600 font-medium">Nâng cấp tài khoản:</span>
-                  {!showManagerRequest && (
-                    <button
-                      onClick={() => setShowManagerRequest(true)}
-                      className="text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg shadow-sm transition"
-                    >
-                      Bạn muốn làm Manager?
-                    </button>
-                  )}
-                </div>
-
-                {/* Form Yêu cầu Manager */}
-                {showManagerRequest && (
-                  <div className="mt-2 bg-white p-3 rounded-lg border border-blue-100 animate-fade-in shadow-sm">
-                    <p className="text-xs text-gray-600 mb-2 font-medium">Lý do mong muốn trở thành quản lý:</p>
-                    <textarea
-                      rows="3"
-                      className="w-full text-sm p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                      placeholder="Nhập nội dung..."
-                      value={requestReason}
-                      onChange={(e) => setRequestReason(e.target.value)}
-                    ></textarea>
-                    <div className="flex justify-end gap-2 mt-2">
-                      <button onClick={() => setShowManagerRequest(false)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1 font-medium">Hủy</button>
-                      <button
-                        onClick={handleSendRequestManager}
-                        className="bg-blue-600 text-white text-sm px-4 py-1.5 rounded-md flex items-center gap-2 hover:bg-blue-700 shadow-sm font-bold"
-                      >
-                        <IoSend size={14} /> Gửi
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* 3. Nút Đổi mật khẩu (Toggle) */}
             <div>
               <button
@@ -212,8 +172,8 @@ const UserProfile = ({ isOpen, onClose, user }) => {
               onClick={handleSave}
               disabled={!hasChanges}
               className={`w-full py-3 rounded-xl font-bold text-lg transition-all duration-300 ${hasChanges
-                  ? "bg-green-600 text-white hover:bg-green-700 shadow-lg hover:shadow-green-200 cursor-pointer transform hover:-translate-y-0.5"
-                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                ? "bg-green-600 text-white hover:bg-green-700 shadow-lg hover:shadow-green-200 cursor-pointer transform hover:-translate-y-0.5"
+                : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 }`}
             >
               Lưu thay đổi

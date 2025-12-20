@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaSignOutAlt, FaUser } from "react-icons/fa";
 import Swal from 'sweetalert2';
 import VolunteerView from '../components/dashboard/VolunteerView';
 import ManagerView from '../components/dashboard/ManagerView';
@@ -58,41 +57,6 @@ const DashBoard = () => {
     return (
         <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans">
             <div className="max-w-7xl mx-auto space-y-8">
-
-                {/* Header Section */}
-                <div className="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-[25px] shadow-sm border border-gray-100 animate-fade-in-down">
-                    {/* Welcome Text */}
-                    <div className="mb-4 md:mb-0 text-center md:text-left">
-                        <h1 className="text-2xl md:text-3xl font-extrabold text-green-800 tracking-tight">
-                            Xin chào, {userName}! 👋
-                        </h1>
-                        <p className="text-gray-500 text-sm mt-1">
-                            Hôm nay bạn muốn đóng góp điều gì cho cộng đồng?
-                        </p>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-3 bg-gray-100 px-4 py-2 rounded-full">
-                            <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-green-700">
-                                <FaUser size={14} />
-                            </div>
-                            <div className="text-right hidden sm:block">
-                                <p className="text-xs font-bold text-gray-700">{userName}</p>
-                                <p className="text-[10px] text-gray-500 font-semibold">{currentUserRole}</p>
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={handleLogout}
-                            className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white p-3 rounded-full transition-all duration-300 shadow-sm group"
-                            title="Đăng xuất"
-                        >
-                            <FaSignOutAlt className="group-hover:rotate-180 transition-transform duration-300" />
-                        </button>
-                    </div>
-                </div>
-
                 {/* Main Content Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 

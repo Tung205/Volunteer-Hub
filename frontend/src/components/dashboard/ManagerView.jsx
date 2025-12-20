@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FaCalculator, FaClock, FaUserCog, FaTimesCircle } from "react-icons/fa";
 import Swal from 'sweetalert2';
-import CreateEventModal from '../CreateEventModal';
+import CreateEventModal from '../CreateEvent';
 import MyEvents from '../MyEvents';
 import { MOCK_PENDING_DATA } from '../../data/mockData';
 
