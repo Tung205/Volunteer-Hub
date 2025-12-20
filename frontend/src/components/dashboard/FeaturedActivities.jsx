@@ -46,7 +46,7 @@ const FeaturedActivities = () => {
     };
 
     return (
-        <div className="bg-[#E8E8E8] rounded-[20px] p-6 h-full flex flex-col">
+        <div className="bg-gradient-to-b from-green-100 to-white border border-green-200 shadow-sm rounded-[20px] p-6 h-full flex flex-col">
             {/* Header & Filter */}
             <div className="relative mb-6">
                 <div className="flex flex-col items-center justify-center">
