@@ -6,7 +6,7 @@ import morgan from 'morgan';
 import authRoutes from './routes/auth.routes.js';
 import eventRoutes from './routes/event.routes.js';
 import registrationRoutes from './routes/registration.routes.js';
-import seedRouter from './seedRouter.js';
+import seedRouter from './seed.js'
 
 
 const app = express();
