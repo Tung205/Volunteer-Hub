@@ -18,9 +18,20 @@ export const EventService = {
     }
     
     // Text search
+    // if (filters.search) {
+    //   query.$text = { $search: filters.search };
+    // }
     if (filters.search) {
-      query.$text = { $search: filters.search };
+      const sanitized = this.sanitizeSearchQuery(filters.search);
+      const q = this.escapeRegex(sanitized);
+
+      query.$or = [
+        { title: { $regex: q, $options: "i" } },
+        { location: { $regex: q, $options: "i" } },
+        { description: { $regex: q, $options: "i" } },
+      ];
     }
+
     
     // Date range filter
     if (filters.startDate || filters.endDate) {
@@ -51,6 +62,10 @@ export const EventService = {
     const validPage = Math.max(1, parseInt(page) || 1);
     const validLimit = Math.min(50, Math.max(1, parseInt(limit) || 6));
     return { page: validPage, limit: validLimit };
+  },
+
+  escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   },
 
   sanitizeSearchQuery(query) {
@@ -160,30 +175,53 @@ export const EventService = {
     return events;
   },
 
-  async searchEventSuggestions(searchQuery, limit = 10) {
-    // Return empty array for empty query
-    if (!searchQuery || searchQuery.trim().length === 0) {
-      return [];
-    }
+  // async searchEventSuggestions(searchQuery, limit = 10) {
+  //   // Return empty array for empty query
+  //   if (!searchQuery || searchQuery.trim().length === 0) {
+  //     return [];
+  //   }
     
+  //   // Sanitize search query
+  //   const sanitizedQuery = this.sanitizeSearchQuery(searchQuery);
+    
+  //   // Full-text search with relevance score
+  //   const events = await Event.find(
+  //     {
+  //       $text: { $search: sanitizedQuery },
+  //       status: 'OPENED'
+  //     },
+  //     {
+  //       score: { $meta: 'textScore' } // Add relevance score
+  //     }
+  //   )
+  //   .sort({ score: { $meta: 'textScore' } }) // Sort by relevance
+  //   .limit(limit)
+  //   .select('_id title coverImageUrl location startTime') // Only return needed fields
+  //   .lean();
+    
+  //   return events;
+  // },
+
     // Sanitize search query
-    const sanitizedQuery = this.sanitizeSearchQuery(searchQuery);
-    
-    // Full-text search with relevance score
-    const events = await Event.find(
-      {
-        $text: { $search: sanitizedQuery },
-        status: 'OPENED'
-      },
-      {
-        score: { $meta: 'textScore' } // Add relevance score
-      }
-    )
-    .sort({ score: { $meta: 'textScore' } }) // Sort by relevance
-    .limit(limit)
-    .select('_id title coverImageUrl location startTime') // Only return needed fields
-    .lean();
-    
+  async searchEventSuggestions(searchQuery, limit = 10) {
+    if (!searchQuery || searchQuery.trim().length === 0) return [];
+
+    const sanitized = this.sanitizeSearchQuery(searchQuery);
+    const q = this.escapeRegex(sanitized);
+
+    const events = await Event.find({
+      status: "OPENED",
+      $or: [
+        { title: { $regex: q, $options: "i" } },
+        { location: { $regex: q, $options: "i" } },
+        { description: { $regex: q, $options: "i" } },
+      ],
+    })
+      .sort({ startTime: 1 })              // event gần nhất lên trước
+      .limit(limit)
+      .select("_id title coverImageUrl location startTime")
+      .lean();
+
     return events;
   },
 

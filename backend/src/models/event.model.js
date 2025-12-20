@@ -79,6 +79,12 @@ const EventSchema = new mongoose.Schema(
     coverImageUrl: {     // Ảnh phía trái các card
       type: String,
     },
+
+    searchText: {
+      type: String,
+      default: "",
+      select: false,
+    }
   },
   {
     timestamps: true,    // createdAt, updatedAt

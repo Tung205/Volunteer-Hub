@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import { IoSearch } from "react-icons/io5";
 import InfoEvent from "../components/InfoEvent";
@@ -10,9 +10,7 @@ import api from "../api/axios";
 // Map object Event từ backend -> data cho UI
 const mapApiEventToUiEvent = (ev) => {
   const startDate = ev.startTime ? new Date(ev.startTime) : null;
-  const formattedDate = startDate
-    ? startDate.toLocaleDateString("vi-VN")
-    : "";
+  const formattedDate = startDate ? startDate.toLocaleDateString("vi-VN") : "";
 
   let scale = "";
   if (typeof ev.maxParticipants === "number") {
@@ -24,6 +22,8 @@ const mapApiEventToUiEvent = (ev) => {
 
   return {
     id: ev._id,
+
+    // giữ nguyên field cũ dùng cho EventCard
     imageUrl:
       ev.coverImageUrl ||
       "https://storage.googleapis.com/agent-tools-public-content/image_a0b60e.png",
@@ -35,6 +35,13 @@ const mapApiEventToUiEvent = (ev) => {
     userStatus: ev.userStatus || null,
     scale,
     raw: ev,
+
+    // field để InfoEvent match đúng cấu trúc
+    startTime: ev.startTime || null,
+    organizerName: ev.organizerName || "Ban tổ chức",
+    image:
+      ev.coverImageUrl ||
+      "https://storage.googleapis.com/agent-tools-public-content/image_a0b60e.png",
   };
 };
 
@@ -56,15 +63,11 @@ const EventPage = () => {
   const [error, setError] = useState("");
 
   // Search & filter
-  const [searchTerm, setSearchTerm] = useState(
-    searchParams.get("search") || ""
-  );
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
   const [locationFilter, setLocationFilter] = useState(
     searchParams.get("location") || ""
   );
-  const [scaleFilter, setScaleFilter] = useState(
-    searchParams.get("scale") || ""
-  );
+  const [scaleFilter, setScaleFilter] = useState(searchParams.get("scale") || "");
 
   // Gợi ý tìm kiếm
   const [suggestions, setSuggestions] = useState([]);
@@ -74,6 +77,29 @@ const EventPage = () => {
   // Popup
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // ===== Helpers =====
+  const normalizeStatus = (s) => {
+    if (!s) return null;
+    const x = String(s).toLowerCase();
+    return x;
+  };
+
+  const getAccessToken = () => {
+    const t = localStorage.getItem("accessToken");
+    if (!t || t === "null" || t === "undefined") return null;
+    return t;
+  };
+
+  // ===== NEW API: GET /api/registrations/:eventId/status =====
+  const fetchRegistrationStatusApi = async (eventId) => {
+    const token = getAccessToken();
+    const res = await api.get(`api/registrations/${eventId}/status`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    // res.data = { status: "NONE" | "PENDING" | "APPROVED" ... }
+    return res.data?.status || "NONE";
+  };
 
   // ========== API ==========
 
@@ -89,24 +115,20 @@ const EventPage = () => {
       setLoading(true);
       setError("");
 
-      // ❗ CHỈ GỬI CÁC PARAM MÀ BACKEND CHO PHÉP:
-      // status, location, search, startDate, endDate, page, limit, sort
       const params = {
         page,
         limit: ITEMS_PER_PAGE,
-        status: "OPENED", // chỉ lấy event đang mở
+        status: "OPENED",
       };
       if (search) params.search = search;
       if (location) params.location = location;
 
       const res = await api.get("api/events", { params });
-      // Controller trả { events, pagination } :contentReference[oaicite:3]{index=3}
       const apiEvents = res.data?.events || [];
       const pagination = res.data?.pagination || {};
 
       let mapped = apiEvents.map(mapApiEventToUiEvent);
 
-      // Filter scale ở FE, KHÔNG gửi lên backend
       if (scale) {
         mapped = mapped.filter((ev) => ev.scale === scale);
       }
@@ -131,7 +153,6 @@ const EventPage = () => {
       return;
     }
     try {
-      // /api/events/suggestions?q=... :contentReference[oaicite:4]{index=4}
       const res = await api.get("api/events/suggestions", {
         params: { q },
       });
@@ -145,7 +166,7 @@ const EventPage = () => {
   const fetchEventById = async (id) => {
     try {
       const res = await api.get(`api/events/${id}`);
-      const ev = res.data?.event; // { event } :contentReference[oaicite:5]{index=5}
+      const ev = res.data?.event;
       if (!ev) return null;
       return mapApiEventToUiEvent(ev);
     } catch (err) {
@@ -176,12 +197,12 @@ const EventPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
+  // Giữ luồng “redirect login -> quay lại mở popup” như bạn đang có
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const eventIdFromUrl = params.get("eventId");
     const popup = params.get("popup") === "true";
 
-    // Lấy từ localStorage nếu URL không có
     const pendingRaw = localStorage.getItem("pendingEventRegistration");
     let eventIdFromStorage = null;
     if (pendingRaw) {
@@ -194,40 +215,30 @@ const EventPage = () => {
     }
 
     const targetEventId = eventIdFromUrl || eventIdFromStorage;
-
     if (!targetEventId) return;
 
-    // Nếu có eventId & popup=true -> mở lại popup
     if (popup || eventIdFromStorage) {
       (async () => {
-        // Nếu list events đã load rồi, thử tìm trong state trước
-        let found = events.find((ev) => ev.id === targetEventId);
+        // luôn fetch chi tiết để popup full info
+        const detail = await fetchEventById(targetEventId);
+        if (!detail) return;
 
-        // Nếu chưa có trong state, gọi API lấy chi tiết
-        if (!found) {
-          try {
-            const res = await api.get(`/events/${targetEventId}`);
-            const ev = res.data?.event;
-            if (ev) {
-              found = mapApiEventToUiEvent(ev);
-            }
-          } catch (err) {
-            console.error("fetchEventById error:", err);
-          }
+        // gọi API mới để lấy status đúng (guest => NONE)
+        try {
+          const st = await fetchRegistrationStatusApi(targetEventId);
+          const uiStatus = st === "NONE" ? null : normalizeStatus(st);
+          setSelectedEvent(uiStatus ? { ...detail, userStatus: uiStatus } : detail);
+        } catch (e) {
+          console.error("fetchRegistrationStatusApi error:", e);
+          setSelectedEvent(detail);
         }
 
-        if (found) {
-          setSelectedEvent(found);
-          setIsModalOpen(true);
-        }
-
-        // Dùng xong thì xóa dấu vết
+        setIsModalOpen(true);
         localStorage.removeItem("pendingEventRegistration");
       })();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [events]); // chạy lại mỗi khi events load xong
-
+  }, []);
 
   const updateUrlAndFetch = (override = {}) => {
     const newSearch = override.search ?? searchTerm;
@@ -265,9 +276,7 @@ const EventPage = () => {
 
   const handleSelectSuggestion = (suggestion) => {
     const title =
-      typeof suggestion === "string"
-        ? suggestion
-        : suggestion.title || suggestion._id;
+      typeof suggestion === "string" ? suggestion : suggestion.title || suggestion._id;
 
     setSearchTerm(title);
     setShowSuggestions(false);
@@ -285,39 +294,58 @@ const EventPage = () => {
   }, []);
 
   const handlePrevPage = () => {
-    if (currentPage > 1) {
-      updateUrlAndFetch({ page: currentPage - 1 });
-    }
+    if (currentPage > 1) updateUrlAndFetch({ page: currentPage - 1 });
   };
 
   const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      updateUrlAndFetch({ page: currentPage + 1 });
-    }
+    if (currentPage < totalPages) updateUrlAndFetch({ page: currentPage + 1 });
   };
 
-  // ========== POPUP & ĐĂNG KÝ (tạm local) ==========
+  // ========== POPUP LOGIC (NEW: fetch detail + status) ==========
+  const handleCardClick = async (event) => {
+  try {
+    // 1) fetch detail event cho popup đầy đủ info
+    const res = await api.get(`api/events/${event.id}`);
+    const ev = res.data?.event;
+    const detail = ev ? mapApiEventToUiEvent(ev) : event;
 
-  const handleCardClick = (event) => {
+    // 2) fetch status -> set userStatus cho InfoEvent đổi nút
+    const st = await fetchRegistrationStatusApi(event.id);
+    const uiStatus = st === "NONE" ? null : normalizeStatus(st);
+    console.log(uiStatus);
+    setSelectedEvent(uiStatus ? { ...detail, userStatus: uiStatus } : detail);
+    setIsModalOpen(true);
+  } catch (e) {
+    console.error("handleCardClick error:", e);
     setSelectedEvent(event);
     setIsModalOpen(true);
+  }
+};
+
+  const registerEventApi = async (eventId) => {
+    const token = getAccessToken();
+    const res = await api.post(
+      `api/registrations/${eventId}/register`,
+      {},
+      token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
+    );
+    return res.data?.registration || res.data;
   };
 
-  const handleRegister = () => {
-    const isAuthenticated = localStorage.getItem("accessToken");
-    if (!isAuthenticated) {
-      if(selectedEvent?.id) {
+  const handleRegister = async () => {
+    
+    const token = getAccessToken();
+
+    if (!token) {
+      if (selectedEvent?.id) {
         localStorage.setItem(
           "pendingEventRegistration",
-          JSON.stringify({ 
-            eventId: selectedEvent.id,
-            createdAt: Date.now(),
-           })
-        )
+          JSON.stringify({ eventId: selectedEvent.id, createdAt: Date.now() })
+        );
       }
+
       setIsModalOpen(false);
-      // const redirectUrl = `api/events?eventId=${selectedEvent.id}&popup=true&autoRegister=true`;
-      const redirectUrl = `/events?eventId=${selectedEvent.id}&popup=true`;
+      const redirectUrl = `/events?eventId=${selectedEvent.id}&popup=true&autoRegister=true`;
 
       Swal.fire({
         icon: "warning",
@@ -335,52 +363,107 @@ const EventPage = () => {
       return;
     }
 
-    Swal.fire({
-      title: "Đang xử lý...",
-      didOpen: () => Swal.showLoading(),
-      timer: 1000,
-    }).then(() => {
-      const updatedEvents = events.map((ev) =>
-        ev.id === selectedEvent.id ? { ...ev, userStatus: "pending" } : ev
-      );
-      setEvents(updatedEvents);
-      setSelectedEvent((prev) =>
-        prev ? { ...prev, userStatus: "pending" } : prev
-      );
-      Swal.fire(
-        "Thành công",
-        "Đăng ký thành công! Vui lòng chờ duyệt.",
-        "success"
-      );
-    });
+    if (!selectedEvent?.id) return;
+
+    try {
+      Swal.fire({
+        title: "Đang đăng ký...",
+        didOpen: () => Swal.showLoading(),
+        allowOutsideClick: false,
+      });
+
+      const registration = await registerEventApi(selectedEvent.id);
+
+      // update ngay theo response
+      const newStatus = normalizeStatus(registration?.status || "PENDING");
+      setSelectedEvent((prev) => (prev ? { ...prev, userStatus: newStatus } : prev));
+
+
+      // optional: gọi API status mới để đảm bảo đúng tuyệt đối (nhất là case backend trả khác)
+      try {
+        const st = await fetchRegistrationStatusApi(selectedEvent.id);
+        const uiStatus = st === "NONE" ? null : normalizeStatus(st);
+        setSelectedEvent((prev) => (prev ? { ...prev, userStatus: uiStatus } : prev));
+      } catch {}
+
+      Swal.fire("Thành công", "Đăng ký thành công! Vui lòng chờ duyệt.", "success");
+    } catch (err) {
+      console.error("register error:", err);
+
+      const status = err?.response?.status;
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.details ||
+        "Đăng ký thất bại. Vui lòng thử lại.";
+
+      if (status === 409) {
+        // đã đăng ký trước đó -> gọi API status mới để cập nhật nút đúng (pending/approved)
+        Swal.fire("Thông báo", "Bạn đã đăng ký sự kiện này trước đó.", "info");
+        try {
+          const st = await fetchRegistrationStatusApi(selectedEvent.id);
+          const uiStatus = st === "NONE" ? null : normalizeStatus(st);
+          setSelectedEvent((prev) => (prev ? { ...prev, userStatus: uiStatus } : prev));
+        } catch {}
+        return;
+      }
+
+      if (status === 401) {
+        Swal.fire("Phiên đăng nhập hết hạn", "Vui lòng đăng nhập lại.", "warning");
+        return;
+      }
+
+      if (status === 403) {
+        Swal.fire(
+          "Không có quyền",
+          "Chỉ tài khoản tình nguyện viên mới được đăng ký sự kiện.",
+          "error"
+        );
+        return;
+      }
+
+      Swal.fire("Lỗi", message, "error");
+    }
   };
 
   const handleJoinChat = () => {
+    // bạn sẽ bổ sung sau
     navigate("/");
   };
 
-  // Auto mở popup khi redirect về từ login
+  // Auto mở popup khi redirect về từ login + autoRegister
   useEffect(() => {
     const eventId = searchParams.get("eventId");
     const popup = searchParams.get("popup");
     const autoRegister = searchParams.get("autoRegister");
-    const token = localStorage.getItem("accessToken");
+    const token = getAccessToken();
 
     if (eventId && popup === "true") {
       (async () => {
-        const ev = await fetchEventById(eventId);
-        if (!ev) return;
-        setSelectedEvent(ev);
+        const detail = await fetchEventById(eventId);
+        if (!detail) return;
+
+        // set status trước khi hiện popup
+        try {
+          const st = await fetchRegistrationStatusApi(eventId);
+          const uiStatus = st === "NONE" ? null : normalizeStatus(st);
+          setSelectedEvent(uiStatus ? { ...detail, userStatus: uiStatus } : detail);
+        } catch {
+          setSelectedEvent(detail);
+        }
+
         setIsModalOpen(true);
 
+        // nếu cần autoRegister
         if (autoRegister === "true" && token) {
-          const updatedEvents = events.map((e) =>
-            e.id === ev.id ? { ...e, userStatus: "pending" } : e
-          );
-          setEvents(updatedEvents);
-          setSelectedEvent((prev) =>
-            prev ? { ...prev, userStatus: "pending" } : prev
-          );
+          try {
+            const registration = await registerEventApi(eventId);
+            const newStatus = normalizeStatus(registration?.status || "PENDING");
+            setSelectedEvent((prev) => (prev ? { ...prev, userStatus: newStatus } : prev));
+
+            Swal.fire("Thành công", "Đăng ký thành công! Vui lòng chờ duyệt.", "success");
+          } catch (err) {
+            console.error("autoRegister error:", err);
+          }
         }
       })();
     }
@@ -402,9 +485,7 @@ const EventPage = () => {
         <div className="absolute inset-0 bg-black/50" />
 
         <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center z-10">
-          <h1 className="text-white text-2xl md:text-4xl font-bold mb-2">
-            Xin chào,
-          </h1>
+          <h1 className="text-white text-2xl md:text-4xl font-bold mb-2">Xin chào,</h1>
           <h2 className="text-white text-2xl md:text-4xl font-bold mb-8">
             Hôm nay bạn muốn tham gia sự kiện nào?
           </h2>
@@ -450,9 +531,7 @@ const EventPage = () => {
             <div className="relative">
               <select
                 value={locationFilter}
-                onChange={(e) =>
-                  setLocationFilter(e.target.value)
-                }
+                onChange={(e) => setLocationFilter(e.target.value)}
                 className="w-full py-3 px-4 rounded-sm text-gray-600 bg-white border-none outline-none cursor-pointer text-center font-medium shadow-sm hover:bg-gray-50 appearance-none"
               >
                 <option value="">-- Tất cả Địa điểm --</option>
@@ -499,26 +578,25 @@ const EventPage = () => {
                 ? "Đang tìm kiếm..."
                 : `Tìm thấy ${events.length} kết quả${
                     searchTerm ? ` cho "${searchTerm}"` : ""
-                  }${
-                    locationFilter ? ` tại "${locationFilter}"` : ""
-                  }`}
+                  }${locationFilter ? ` tại "${locationFilter}"` : ""}`}
             </p>
           )}
         </div>
 
-        {error && (
-          <div className="text-center text-red-500 mb-4">{error}</div>
-        )}
+        {error && <div className="text-center text-red-500 mb-4">{error}</div>}
 
         {loading ? (
           <div className="text-center py-10 text-gray-500">
             <p className="text-xl">Đang tải sự kiện...</p>
           </div>
         ) : events.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {events.map((item) => (
               <div key={item.id} className="animate-fade-in">
-                <EventCard event={item} onClick={handleCardClick} />
+                {/* wrapper để ô event dài hơn */}
+                <div className="w-full min-h-[300px]">
+                  <EventCard event={item} onClick={handleCardClick} />
+                </div>
               </div>
             ))}
           </div>

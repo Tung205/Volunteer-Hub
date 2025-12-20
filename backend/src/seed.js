@@ -1,22 +1,278 @@
+// import bcrypt from "bcryptjs";
+// import { User } from "./models/user.model.js";
+// import { Event } from "./models/event.model.js";
+// import { Registration } from "./models/registration.model.js";
 
-//seed.js
-import bcrypt from 'bcryptjs';
-import { User } from './models/user.model.js';
-import { Event } from './models/event.model.js';
-import { Registration } from './models/registration.model.js';
-import Channel from './models/channel.model.js';
-import Post from './models/post.model.js';
-import Comment from './models/comment.model.js';
-import Like from './models/like.model.js';
+// // =====================
+// // Helpers
+// // =====================
+// function randomFromArray(arr) {
+//   return arr[Math.floor(Math.random() * arr.length)];
+// }
 
+// function removeVietnameseTones(str) {
+//   return str
+//     .normalize("NFD")
+//     .replace(/[\u0300-\u036f]/g, "")
+//     .replace(/đ/g, "d")
+//     .replace(/Đ/g, "D");
+// }
+
+// // lấy "toan" từ "Nguyễn Đức Toàn" => "toan"
+// function makeEmailFromName(fullName) {
+//   const clean = removeVietnameseTones(fullName).toLowerCase().trim();
+//   const parts = clean.split(/\s+/).filter(Boolean);
+//   const last = parts[parts.length - 1] || "user";
+//   return `${last}@gmail.com`;
+// }
+
+// // Ảnh có thể render trực tiếp (Unsplash source)
+// function unsplashByKeyword(keyword) {
+//   // thêm sig để giảm trùng ảnh
+//   const sig = Math.floor(Math.random() * 100000);
+//   const q = encodeURIComponent(keyword);
+//   return `https://source.unsplash.com/1200x700/?${q}&sig=${sig}`;
+// }
+
+// // =====================
+// // Seed
+// // =====================
+// export async function seedDatabase() {
+//   console.log("🌱 Seeding database...");
+
+//   // An toàn: chỉ cho phép seed xóa DB ở dev
+//   if (process.env.NODE_ENV && process.env.NODE_ENV !== "development") {
+//     throw new Error(
+//       `Refuse to seed in NODE_ENV=${process.env.NODE_ENV}. Set NODE_ENV=development to proceed.`
+//     );
+//   }
+
+//   // XÓA cũ (dev)
+//   await Promise.all([
+//     User.deleteMany({}),
+//     Event.deleteMany({}),
+//     Registration.deleteMany({}),
+//   ]);
+
+//   // ==== 1) USERS ====
+//   const passwordAdminHash = await bcrypt.hash("Admin@123", 10);
+//   const passwordManagerHash = await bcrypt.hash("Manager@123", 10);
+//   const passwordVolunteerHash = await bcrypt.hash("Volunteer@123", 10);
+
+//   const adminName = "Trần Minh Anh";
+//   const admin = await User.create({
+//     email: makeEmailFromName(adminName),
+//     passwordHash: passwordAdminHash,
+//     name: adminName,
+//     roles: ["ADMIN"],
+//   });
+
+//   const managerNames = ["Nguyễn Thanh Tùng", "Nguyễn Đức Toàn"];
+//   const managers = [];
+//   for (const name of managerNames) {
+//     const u = await User.create({
+//       email: makeEmailFromName(name),
+//       passwordHash: passwordManagerHash,
+//       name,
+//       roles: ["MANAGER"],
+//     });
+//     managers.push(u);
+//   }
+
+//   const volunteerNames = ["Lê Thị Mai", "Phạm Quốc Huy", "Võ Hoàng Long", "Bùi Ngọc Linh"];
+//   const volunteers = [];
+//   for (const name of volunteerNames) {
+//     const u = await User.create({
+//       email: makeEmailFromName(name),
+//       passwordHash: passwordVolunteerHash,
+//       name,
+//       roles: ["VOLUNTEER"],
+//     });
+//     volunteers.push(u);
+//   }
+
+//   // Những người có thể đăng ký sự kiện: volunteer + manager
+//   const registrableUsers = [...volunteers, ...managers];
+
+//   // ==== 2) EVENTS ====
+//   const locations = ["Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Huế", "Lào Cai", "Quảng Ninh", "Cần Thơ"];
+//   const now = new Date();
+
+//   // 30 ý tưởng sự kiện (tên + mô tả ngắn + keyword ảnh)
+//   const eventIdeas = [
+//     { title: "Dọn rác bãi biển – Giữ xanh đại dương", desc: "Thu gom rác, phân loại và tuyên truyền bảo vệ môi trường biển.", kw: "beach cleanup" },
+//     { title: "Dạy tiếng Anh cho trẻ vùng cao", desc: "Lớp học giao tiếp cơ bản, hoạt động trò chơi và luyện phát âm.", kw: "teaching kids" },
+//     { title: "Áo ấm cho em", desc: "Gom áo ấm, phân loại, đóng gói và trao tặng cho trẻ em khó khăn.", kw: "winter donation" },
+//     { title: "Bữa cơm 0 đồng", desc: "Nấu và phát suất ăn miễn phí cho người lao động, bệnh nhân khó khăn.", kw: "community meal" },
+//     { title: "Hiến máu nhân đạo – Giọt hồng sẻ chia", desc: "Tổ chức hiến máu và hỗ trợ điều phối người tham gia.", kw: "blood donation" },
+//     { title: "Trồng cây gây rừng – Một cây xanh, triệu hy vọng", desc: "Trồng cây, chăm sóc và gắn bảng tuyên truyền.", kw: "tree planting" },
+//     { title: "Gây quỹ sách giáo khoa cho học sinh nghèo", desc: "Quyên góp sách, đồ dùng học tập và phân phối theo trường.", kw: "school books donation" },
+//     { title: "Thăm và tặng quà mái ấm tình thương", desc: "Giao lưu, hỗ trợ hoạt động và tặng nhu yếu phẩm.", kw: "charity home" },
+//     { title: "Sửa xe miễn phí cho người lao động", desc: "Hỗ trợ kiểm tra xe, thay dầu/vá xe và tư vấn an toàn.", kw: "bike repair" },
+//     { title: "Chợ 0 đồng – Trao đi để nhận lại", desc: "Tổ chức gian hàng miễn phí quần áo, nhu yếu phẩm.", kw: "free market" },
+//     { title: "Ngày hội tái chế – Biến rác thành quà", desc: "Thu gom vật liệu tái chế, workshop làm đồ handmade.", kw: "recycling workshop" },
+//     { title: "Lớp kỹ năng mềm cho thanh thiếu niên", desc: "Hướng dẫn giao tiếp, làm việc nhóm, thuyết trình cơ bản.", kw: "soft skills workshop" },
+//     { title: "Hỗ trợ bệnh viện – Dẫn đường & chăm sóc tinh thần", desc: "Hướng dẫn thủ tục, hỗ trợ người nhà và phát nước.", kw: "hospital volunteer" },
+//     { title: "Chăm sóc người già tại viện dưỡng lão", desc: "Tổ chức trò chuyện, đọc sách, hoạt động vận động nhẹ.", kw: "nursing home" },
+//     { title: "Làm sạch công viên – Thành phố xanh", desc: "Nhặt rác, làm sạch khu vui chơi, trồng hoa.", kw: "park cleanup" },
+//     { title: "Tập huấn sơ cứu cơ bản cho cộng đồng", desc: "Hướng dẫn sơ cứu, xử lý tình huống khẩn cấp.", kw: "first aid training" },
+//     { title: "Đêm nhạc gây quỹ học bổng", desc: "Tổ chức chương trình, bán vé gây quỹ học bổng.", kw: "charity concert" },
+//     { title: "Hỗ trợ lớp học tình thương", desc: "Soạn bài, kèm học, tổ chức hoạt động ngoại khóa.", kw: "volunteer teaching" },
+//     { title: "Gom pin cũ – Bảo vệ môi trường", desc: "Thu gom pin, phân loại và chuyển đến điểm xử lý.", kw: "battery recycling" },
+//     { title: "Tủ quần áo miễn phí – Ai cần đến lấy", desc: "Set up tủ đồ, sắp xếp và hỗ trợ người nhận.", kw: "clothes donation" },
+//     { title: "Chạy bộ gây quỹ – Mỗi bước chân, một hy vọng", desc: "Sự kiện thể thao gây quỹ cho trẻ em khó khăn.", kw: "charity run" },
+//     { title: "Tặng suất ăn cho người vô gia cư", desc: "Chuẩn bị và phát suất ăn, nước uống buổi tối.", kw: "homeless outreach" },
+//     { title: "Vẽ tranh tường – Làm đẹp khu phố", desc: "Vẽ bích họa cộng đồng tại khu dân cư/trường học.", kw: "street mural" },
+//     { title: "Workshop hướng nghiệp cho học sinh", desc: "Chia sẻ ngành nghề, CV cơ bản, định hướng tương lai.", kw: "career workshop" },
+//     { title: "Thu gom đồ điện tử cũ", desc: "Thu gom, phân loại và chuyển cho đơn vị tái chế.", kw: "e-waste recycling" },
+//     { title: "Chia sẻ kỹ năng tin học cho người lớn tuổi", desc: "Hướng dẫn điện thoại thông minh, internet an toàn.", kw: "computer class seniors" },
+//     { title: "Ngày hội đọc sách – Nuôi dưỡng tri thức", desc: "Đọc sách cùng trẻ em, kể chuyện, đổi sách.", kw: "reading day" },
+//     { title: "Hỗ trợ nông sản – Kết nối yêu thương", desc: "Hỗ trợ đóng gói, vận chuyển nông sản đến điểm bán.", kw: "farmers market" },
+//     { title: "Tặng cây giống – Xanh hóa ban công", desc: "Phát cây giống, hướng dẫn chăm sóc và phân loại rác hữu cơ.", kw: "plant giveaway" },
+//     { title: "Sửa nhà cho hộ khó khăn", desc: "Sơn sửa nhỏ, dọn dẹp, gia cố khu vực xuống cấp.", kw: "home repair volunteer" },
+//   ];
+
+//   const events = [];
+
+//   for (let i = 0; i < eventIdeas.length; i++) {
+//     const idea = eventIdeas[i];
+//     const startOffsetDays = i + 1; // dàn đều tương lai
+//     const startTime = new Date(now.getTime() + startOffsetDays * 24 * 60 * 60 * 1000);
+//     const endTime = new Date(startTime.getTime() + 3 * 60 * 60 * 1000);
+
+//     const location = randomFromArray(locations);
+//     const maxParticipants = Math.random() < 0.2 ? 0 : randomFromArray([10, 15, 20, 30, 50]);
+
+//     // xen kẽ 2 manager làm organizer
+//     const organizer = managers[i % managers.length];
+
+//     const event = await Event.create({
+//       title: idea.title,
+//       description: idea.desc,
+//       location,
+//       address: `${(i + 3) * 7} Đường Tình Nguyện, ${location}`,
+//       startTime,
+//       endTime,
+//       organizerId: organizer._id,
+//       organizerName: organizer.name,
+//       maxParticipants,
+//       currentParticipants: 0,
+//       status: "OPENED",
+//       approvedBy: admin._id,
+//       approvedAt: new Date(),
+//       coverImageUrl: unsplashByKeyword(idea.kw),
+//     });
+
+//     events.push(event);
+//   }
+
+//   // ==== 3) REGISTRATIONS ====
+//   // tạo đúng 30 cái, từ các event khác nhau & người khác nhau
+//   // chỉ VOLUNTEER + MANAGER được đăng ký
+//   const statuses = ["PENDING", "APPROVED", "COMPLETED"];
+
+//   const usedPairs = new Set(); // event-user unique
+//   const registrations = [];
+
+//   // shuffle events để đảm bảo "những sự kiện khác nhau"
+//   const shuffledEvents = [...events].sort(() => Math.random() - 0.5);
+
+//   const totalRegistrations = 30;
+//   for (let i = 0; i < totalRegistrations; i++) {
+//     const event = shuffledEvents[i % shuffledEvents.length];
+
+//     // pick user (volunteer/manager)
+//     let user, key;
+//     let safety = 0;
+
+//     do {
+//       user = randomFromArray(registrableUsers);
+//       key = `${event._id.toString()}-${user._id.toString()}`;
+//       safety++;
+//       if (safety > 200) break;
+//     } while (usedPairs.has(key));
+
+//     usedPairs.add(key);
+
+//     // status random nhưng có xu hướng APPROVED/COMPLETED nhiều hơn chút để currentParticipants có ý nghĩa
+//     const status = Math.random() < 0.15 ? "PENDING" : randomFromArray(["APPROVED", "COMPLETED"]);
+
+//     const reg = await Registration.create({
+//       eventId: event._id,
+//       volunteerId: user._id, // giữ field cũ của bạn để khỏi vỡ code
+//       volunteerName: user.name,
+//       volunteerEmail: user.email,
+//       status,
+//       registeredAt: new Date(),
+//       approvedBy: status === "APPROVED" || status === "COMPLETED" ? admin._id : undefined,
+//     });
+
+//     registrations.push(reg);
+//   }
+
+//   // update currentParticipants = số APPROVED/COMPLETED
+//   const countByEvent = {};
+//   for (const reg of registrations) {
+//     if (reg.status === "APPROVED" || reg.status === "COMPLETED") {
+//       const id = reg.eventId.toString();
+//       countByEvent[id] = (countByEvent[id] || 0) + 1;
+//     }
+//   }
+
+//   for (const [eventId, count] of Object.entries(countByEvent)) {
+//     await Event.updateOne({ _id: eventId }, { $set: { currentParticipants: count } });
+//   }
+
+//   console.log("✅ Seed done!");
+//   console.log("Accounts:");
+//   console.log(`- Admin: ${admin.email} / Admin@123`);
+//   console.log(`- Managers: ${managers.map((m) => `${m.email} / Manager@123`).join(" | ")}`);
+//   console.log(`- Volunteers: ${volunteers.map((v) => `${v.email} / Volunteer@123`).join(" | ")}`);
+// }
+
+import bcrypt from "bcryptjs";
+import { User } from "./models/user.model.js";
+import { Event } from "./models/event.model.js";
+import { Registration } from "./models/registration.model.js";
+
+// =====================
+// Helpers
+// =====================
 function randomFromArray(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-export async function seedDatabase() {
-  console.log('🌱 Seeding database...');
+function removeVietnameseTones(str) {
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
+}
 
-  // XÓA cũ cho môi trường dev, cẩn thận nếu prod
+function makeEmailFromName(fullName) {
+  const clean = removeVietnameseTones(fullName).toLowerCase().trim();
+  const parts = clean.split(/\s+/).filter(Boolean);
+  const last = parts[parts.length - 1] || "user";
+  return `${last}@gmail.com`;
+}
+
+// ✅ Cloudinary image (ổn định, không redirect kiểu Unsplash source)
+const CLOUDINARY_IMAGE =
+  "https://res.cloudinary.com/dfftcie7c/image/upload/w_1200,q_auto,f_auto/v1766202863/Screenshot_2025-12-20_103843_weczaf.png";
+
+// =====================
+// Seed
+// =====================
+export async function seedDatabase() {
+  console.log("🌱 Seeding database...");
+
+  if (process.env.NODE_ENV && process.env.NODE_ENV !== "development") {
+    throw new Error(
+      `Refuse to seed in NODE_ENV=${process.env.NODE_ENV}. Set NODE_ENV=development to proceed.`
+    );
+  }
+
   await Promise.all([
     User.deleteMany({}),
     Event.deleteMany({}),
@@ -27,232 +283,175 @@ export async function seedDatabase() {
     Like.deleteMany({}),
   ]);
 
-  // ==== 1. USERS ====
-  const passwordAdmin = await bcrypt.hash('Admin123!', 10);
-  const passwordManager = await bcrypt.hash('Manager123!', 10);
-  const passwordVolunteer = await bcrypt.hash('Volunteer123!', 10);
+  // =====================
+  // 1) USERS
+  // =====================
+  const passwordAdminHash = await bcrypt.hash("Admin@123", 10);
+  const passwordManagerHash = await bcrypt.hash("Manager@123", 10);
+  const passwordVolunteerHash = await bcrypt.hash("Volunteer@123", 10);
 
+  const adminName = "Trần Minh Anh";
   const admin = await User.create({
-    email: 'admin@example.com',
-    passwordHash: passwordAdmin,
-    name: 'Admin User',
-    roles: ['ADMIN'],
+    email: makeEmailFromName(adminName),
+    passwordHash: passwordAdminHash,
+    name: adminName,
+    roles: ["ADMIN"],
   });
 
-  const manager = await User.create({
-    email: 'manager@example.com',
-    passwordHash: passwordManager,
-    name: 'Manager User',
-    roles: ['MANAGER'],
-  });
+  const managerNames = ["Nguyễn Thanh Tùng", "Nguyễn Đức Toàn"];
+  const managers = [];
+  for (const name of managerNames) {
+    managers.push(
+      await User.create({
+        email: makeEmailFromName(name),
+        passwordHash: passwordManagerHash,
+        name,
+        roles: ["MANAGER"],
+      })
+    );
+  }
 
-  const volunteer1 = await User.create({
-    email: 'vol1@example.com',
-    passwordHash: passwordVolunteer,
-    name: 'Volunteer One',
-    roles: ['VOLUNTEER'],
-  });
-  const volunteer2 = await User.create({
-    email: 'vol2@example.com',
-    passwordHash: passwordVolunteer,
-    name: 'Volunteer Two',
-    roles: ['VOLUNTEER'],
-  });
-  const volunteer3 = await User.create({
-    email: 'vol3@example.com',
-    passwordHash: passwordVolunteer,
-    name: 'Volunteer Three',
-    roles: ['VOLUNTEER'],
-  });
+  const volunteerNames = [
+    "Lê Thị Mai",
+    "Phạm Quốc Huy",
+    "Võ Hoàng Long",
+    "Bùi Ngọc Linh",
+  ];
+  const volunteers = [];
+  for (const name of volunteerNames) {
+    volunteers.push(
+      await User.create({
+        email: makeEmailFromName(name),
+        passwordHash: passwordVolunteerHash,
+        name,
+        roles: ["VOLUNTEER"],
+      })
+    );
+  }
 
-  const volunteers = [volunteer1, volunteer2, volunteer3];
+  const registrableUsers = [...volunteers, ...managers];
 
-  // ==== 2. EVENTS ====
-  const locations = ['Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng', 'Huế', 'Lào Cai'];
-  const coverImages = [
-    'https://example.com/event1.jpg',
-    'https://example.com/event2.jpg',
-    'https://example.com/event3.jpg',
+  // =====================
+  // 2) EVENTS
+  // =====================
+  const locations = [
+    "Hà Nội",
+    "TP. Hồ Chí Minh",
+    "Đà Nẵng",
+    "Huế",
+    "Lào Cai",
+    "Quảng Ninh",
+    "Cần Thơ",
+  ];
+
+  const now = new Date();
+
+  const eventIdeas = [
+    { title: "Dọn rác bãi biển – Giữ xanh đại dương", desc: "Thu gom rác, phân loại và tuyên truyền bảo vệ môi trường biển.", kw: "beach cleanup" },
+    { title: "Dạy tiếng Anh cho trẻ vùng cao", desc: "Lớp học giao tiếp cơ bản, hoạt động trò chơi và luyện phát âm.", kw: "teaching kids" },
+    { title: "Áo ấm cho em", desc: "Gom áo ấm, phân loại, đóng gói và trao tặng cho trẻ em khó khăn.", kw: "winter donation" },
+    { title: "Bữa cơm 0 đồng", desc: "Nấu và phát suất ăn miễn phí cho người lao động, bệnh nhân khó khăn.", kw: "community meal" },
+    { title: "Hiến máu nhân đạo – Giọt hồng sẻ chia", desc: "Tổ chức hiến máu và hỗ trợ điều phối người tham gia.", kw: "blood donation" },
+    { title: "Trồng cây gây rừng – Một cây xanh, triệu hy vọng", desc: "Trồng cây, chăm sóc và gắn bảng tuyên truyền.", kw: "tree planting" },
+    { title: "Gây quỹ sách giáo khoa cho học sinh nghèo", desc: "Quyên góp sách, đồ dùng học tập và phân phối theo trường.", kw: "school books donation" },
+    { title: "Thăm và tặng quà mái ấm tình thương", desc: "Giao lưu, hỗ trợ hoạt động và tặng nhu yếu phẩm.", kw: "charity home" },
+    { title: "Sửa xe miễn phí cho người lao động", desc: "Hỗ trợ kiểm tra xe, thay dầu/vá xe và tư vấn an toàn.", kw: "bike repair" },
+    { title: "Chợ 0 đồng – Trao đi để nhận lại", desc: "Tổ chức gian hàng miễn phí quần áo, nhu yếu phẩm.", kw: "free market" },
+    { title: "Ngày hội tái chế – Biến rác thành quà", desc: "Thu gom vật liệu tái chế, workshop làm đồ handmade.", kw: "recycling workshop" },
+    { title: "Lớp kỹ năng mềm cho thanh thiếu niên", desc: "Hướng dẫn giao tiếp, làm việc nhóm, thuyết trình cơ bản.", kw: "soft skills workshop" },
+    { title: "Hỗ trợ bệnh viện – Dẫn đường & chăm sóc tinh thần", desc: "Hướng dẫn thủ tục, hỗ trợ người nhà và phát nước.", kw: "hospital volunteer" },
+    { title: "Chăm sóc người già tại viện dưỡng lão", desc: "Tổ chức trò chuyện, đọc sách, hoạt động vận động nhẹ.", kw: "nursing home" },
+    { title: "Làm sạch công viên – Thành phố xanh", desc: "Nhặt rác, làm sạch khu vui chơi, trồng hoa.", kw: "park cleanup" },
+    { title: "Tập huấn sơ cứu cơ bản cho cộng đồng", desc: "Hướng dẫn sơ cứu, xử lý tình huống khẩn cấp.", kw: "first aid training" },
+    { title: "Đêm nhạc gây quỹ học bổng", desc: "Tổ chức chương trình, bán vé gây quỹ học bổng.", kw: "charity concert" },
+    { title: "Hỗ trợ lớp học tình thương", desc: "Soạn bài, kèm học, tổ chức hoạt động ngoại khóa.", kw: "volunteer teaching" },
+    { title: "Gom pin cũ – Bảo vệ môi trường", desc: "Thu gom pin, phân loại và chuyển đến điểm xử lý.", kw: "battery recycling" },
+    { title: "Tủ quần áo miễn phí – Ai cần đến lấy", desc: "Set up tủ đồ, sắp xếp và hỗ trợ người nhận.", kw: "clothes donation" },
+    { title: "Chạy bộ gây quỹ – Mỗi bước chân, một hy vọng", desc: "Sự kiện thể thao gây quỹ cho trẻ em khó khăn.", kw: "charity run" },
+    { title: "Tặng suất ăn cho người vô gia cư", desc: "Chuẩn bị và phát suất ăn, nước uống buổi tối.", kw: "homeless outreach" },
+    { title: "Vẽ tranh tường – Làm đẹp khu phố", desc: "Vẽ bích họa cộng đồng tại khu dân cư/trường học.", kw: "street mural" },
+    { title: "Workshop hướng nghiệp cho học sinh", desc: "Chia sẻ ngành nghề, CV cơ bản, định hướng tương lai.", kw: "career workshop" },
+    { title: "Thu gom đồ điện tử cũ", desc: "Thu gom, phân loại và chuyển cho đơn vị tái chế.", kw: "e-waste recycling" },
+    { title: "Chia sẻ kỹ năng tin học cho người lớn tuổi", desc: "Hướng dẫn điện thoại thông minh, internet an toàn.", kw: "computer class seniors" },
+    { title: "Ngày hội đọc sách – Nuôi dưỡng tri thức", desc: "Đọc sách cùng trẻ em, kể chuyện, đổi sách.", kw: "reading day" },
+    { title: "Hỗ trợ nông sản – Kết nối yêu thương", desc: "Hỗ trợ đóng gói, vận chuyển nông sản đến điểm bán.", kw: "farmers market" },
+    { title: "Tặng cây giống – Xanh hóa ban công", desc: "Phát cây giống, hướng dẫn chăm sóc và phân loại rác hữu cơ.", kw: "plant giveaway" },
+    { title: "Sửa nhà cho hộ khó khăn", desc: "Sơn sửa nhỏ, dọn dẹp, gia cố khu vực xuống cấp.", kw: "home repair volunteer" },
   ];
 
   const events = [];
-  const now = new Date();
 
-  for (let i = 1; i <= 30; i++) {
-    const startOffsetDays = i;
-    const startTime = new Date(
-      now.getTime() + startOffsetDays * 24 * 60 * 60 * 1000
-    );
+  for (let i = 0; i < eventIdeas.length; i++) {
+    const idea = eventIdeas[i];
+
+    const startTime = new Date(now.getTime() + (i + 1) * 24 * 60 * 60 * 1000);
     const endTime = new Date(startTime.getTime() + 3 * 60 * 60 * 1000);
 
-    const location = randomFromArray(locations);
-    const maxParticipants =
-      Math.random() < 0.3 ? 0 : randomFromArray([10, 20, 30, 50]);
+    const organizer = managers[i % managers.length];
 
     const event = await Event.create({
-      title: `Sự kiện thiện nguyện #${i}`,
-      description: `Mô tả chi tiết cho sự kiện thiện nguyện số ${i}.`,
-      location,
-      address: `${i} Đường Tình Nguyện, ${location}`,
+      title: idea.title,
+      description: idea.desc,
+      location: randomFromArray(locations),
+      address: `${(i + 3) * 7} Đường Tình Nguyện`,
       startTime,
       endTime,
-      organizerId: manager._id,
-      organizerName: manager.name,
-      maxParticipants,
+
+      organizerId: organizer._id,
+      organizerName: organizer.name,
+
+      maxParticipants: randomFromArray([10, 20, 30, 50]),
       currentParticipants: 0,
-      status: 'OPENED',
+
+      status: "OPENED",
       approvedBy: admin._id,
       approvedAt: new Date(),
-      coverImageUrl: randomFromArray(coverImages),
+
+      // ✅ ĐÚNG schema: coverImageUrl
+      coverImageUrl: CLOUDINARY_IMAGE,
     });
 
     events.push(event);
   }
 
-  // ==== 3. REGISTRATIONS ====
-  const statuses = ['PENDING', 'APPROVED', 'COMPLETED'];
+  // =====================
+  // 3) REGISTRATIONS
+  // =====================
   const usedPairs = new Set();
-  const totalRegistrations = 30;
-  const registrations = [];
+  const shuffledEvents = [...events].sort(() => Math.random() - 0.5);
 
-  for (let i = 0; i < totalRegistrations; i++) {
-    let event, volunteer, key;
+  for (let i = 0; i < 30; i++) {
+    const event = shuffledEvents[i % shuffledEvents.length];
 
-    while (true) {
-      event = randomFromArray(events);
-      volunteer = randomFromArray(volunteers);
-      key = `${event._id.toString()}-${volunteer._id.toString()}`;
-      if (!usedPairs.has(key)) {
-        usedPairs.add(key);
-        break;
-      }
-    }
+    let user, key;
+    do {
+      user = randomFromArray(registrableUsers);
+      key = `${event._id}-${user._id}`;
+    } while (usedPairs.has(key));
 
-    const status = randomFromArray(statuses);
+    usedPairs.add(key);
 
-    const reg = await Registration.create({
+    const status =
+      Math.random() < 0.15 ? "PENDING" : randomFromArray(["APPROVED", "COMPLETED"]);
+
+    await Registration.create({
       eventId: event._id,
-      volunteerId: volunteer._id,
-      volunteerName: volunteer.name,
-      volunteerEmail: volunteer.email,
+      volunteerId: user._id,
+      volunteerName: user.name,
+      volunteerEmail: user.email,
       status,
       registeredAt: new Date(),
       approvedBy:
-        status === 'APPROVED' || status === 'COMPLETED' ? admin._id : undefined,
+        status === "APPROVED" || status === "COMPLETED" ? admin._id : undefined,
     });
-
-    registrations.push(reg);
   }
 
-  // update currentParticipants
-  const countByEvent = {};
-  registrations.forEach((reg) => {
-    if (reg.status === 'APPROVED' || reg.status === 'COMPLETED') {
-      const id = reg.eventId.toString();
-      countByEvent[id] = (countByEvent[id] || 0) + 1;
-    }
-  });
-
-  for (const [eventId, count] of Object.entries(countByEvent)) {
-    await Event.updateOne(
-      { _id: eventId },
-      { $set: { currentParticipants: count } }
-    );
-  }
-
-  // ==== 4. CHANNELS (cho mỗi event OPENED) ====
-  const channels = [];
-  for (const event of events) {
-    const channel = await Channel.create({
-      eventId: event._id,
-    });
-    channels.push({ channel, event });
-  }
-
-  // ==== 5. POSTS (2-3 posts cho 5 channels đầu) ====
-  const postContents = [
-    'Chào mọi người! Rất vui được tham gia sự kiện này 🎉',
-    'Mình có thể đến sớm 30 phút để chuẩn bị được không ạ?',
-    'Cảm ơn ban tổ chức đã tạo cơ hội cho chúng mình!',
-    'Hôm nay thời tiết đẹp quá, rất mong chờ sự kiện!',
-    'Mọi người nhớ mang theo nước uống nhé!',
-  ];
-
-  const posts = [];
-  for (let i = 0; i < 5 && i < channels.length; i++) {
-    const { channel } = channels[i];
-    
-    // Lấy volunteers đã APPROVED cho event này
-    const approvedRegs = registrations.filter(
-      r => r.eventId.toString() === channel.eventId.toString() && 
-           (r.status === 'APPROVED' || r.status === 'COMPLETED')
-    );
-    
-    // Tạo 2-3 posts cho mỗi channel
-    const numPosts = 2 + Math.floor(Math.random() * 2);
-    for (let j = 0; j < numPosts; j++) {
-      const author = approvedRegs.length > 0 
-        ? volunteers.find(v => v._id.toString() === approvedRegs[j % approvedRegs.length]?.volunteerId.toString()) || manager
-        : manager;
-      
-      const post = await Post.create({
-        channelId: channel._id,
-        authorId: author._id,
-        content: randomFromArray(postContents),
-        attachments: [],
-        likes: 0,
-      });
-      posts.push(post);
-    }
-  }
-
-  // ==== 6. COMMENTS (2-4 comments cho mỗi post) ====
-  const commentContents = [
-    'Đồng ý ạ!',
-    'Mình cũng thế 😊',
-    'Tuyệt vời quá!',
-    'Cảm ơn bạn đã chia sẻ!',
-    'Mình sẽ nhớ!',
-    'Hay quá!',
-  ];
-
-  for (const post of posts) {
-    const numComments = 2 + Math.floor(Math.random() * 3);
-    for (let i = 0; i < numComments; i++) {
-      const author = randomFromArray([...volunteers, manager]);
-      await Comment.create({
-        postId: post._id,
-        authorId: author._id,
-        content: randomFromArray(commentContents),
-      });
-    }
-  }
-
-  // ==== 7. LIKES (random likes cho posts) ====
-  for (const post of posts) {
-    const likers = volunteers.filter(() => Math.random() > 0.5);
-    for (const liker of likers) {
-      await Like.create({
-        postId: post._id,
-        userId: liker._id,
-      });
-    }
-    // Update likes count
-    const likeCount = await Like.countDocuments({ postId: post._id });
-    await Post.updateOne({ _id: post._id }, { $set: { likes: likeCount } });
-  }
-
-  console.log('✅ Seed done!');
-  console.log(`   - Users: 5`);
-  console.log(`   - Events: ${events.length}`);
-  console.log(`   - Registrations: ${registrations.length}`);
-  console.log(`   - Channels: ${channels.length}`);
-  console.log(`   - Posts: ${posts.length}`);
+  console.log("✅ Seed done!");
+  console.log(`Admin: ${admin.email} / Admin@123`);
+  console.log(
+    `Managers: ${managers.map((m) => `${m.email} / Manager@123`).join(" | ")}`
+  );
+  console.log(
+    `Volunteers: ${volunteers.map((v) => `${v.email} / Volunteer@123`).join(" | ")}`
+  );
 }
-
-/* Restart database
-docker compose exec mongo mongosh -u root -p root123 \
-  --authenticationDatabase admin volunteerhub \
-  --quiet --eval "db.dropDatabase()"
-docker compose restart backend && sleep 5 && docker compose logs backend --tail=20
-*/

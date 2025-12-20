@@ -19,7 +19,7 @@ const InfoEvent = ({
     startTime, 
     organizerName, 
     description,
-    image
+    coverImageUrl,
   } = event;
 
   const formattedDate = new Date(startTime).toLocaleDateString('vi-VN', {
@@ -74,7 +74,7 @@ const InfoEvent = ({
             
             <div className="w-full md:w-5/12 flex-shrink-0">
                 <img 
-                  src={image || "https://placehold.co/600x400?text=No+Image"}
+                  src={coverImageUrl || "https://placehold.co/600x400?text=No+Image"}
                   alt={title} 
                   className="w-full h-[220px] md:h-full object-cover rounded-xl shadow-md border border-gray-100" 
                 />

@@ -15,14 +15,14 @@ const port = process.env.PORT || 8080;
     cors: { origin: process.env.CORS_ORIGIN?.split(',') || true }
   });
   initSocket(io);
-  httpServer.listen(port, () => console.log(`🚀 Backend running on :${port}`));
+  httpServer.listen(port, () => console.log(`Backend running on :${port}`));
 
   // DEV ONLY: Seed database if empty
   console.log('NODE_ENV:', process.env.NODE_ENV);
   if (process.env.NODE_ENV === 'development') {
     const userCount = await User.countDocuments();
     if (userCount === 0) {
-      console.log('🌱 Database empty → run seedDatabase()');
+      console.log('Database empty → run seedDatabase()');
       await seedDatabase();
     } else {
       console.log(`✔ Database already has ${userCount} users → skip seed`);

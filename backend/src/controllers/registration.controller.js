@@ -1,4 +1,4 @@
-import { RegistrationService } from '../services/registration.service.js';
+import { RegistrationService, getMyRegistrationStatus } from '../services/registration.service.js';
 
 export const RegistrationController = {
   
@@ -168,5 +168,22 @@ export const RegistrationController = {
       console.error('RejectRegistration error:', error);
       return res.status(500).json({ error: 'INTERNAL' });
     }
+  }
+};
+
+export const getRegistrationStatus = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    // guest -> NONE
+    if (!req.user?.id) {
+      return res.status(200).json({ status: "NONE" });
+    }
+
+    const result = await getMyRegistrationStatus(eventId, req.user.id);
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error("getRegistrationStatus error:", err);
+    return res.status(500).json({ error: "INTERNAL", message: "Lỗi server" });
   }
 };
