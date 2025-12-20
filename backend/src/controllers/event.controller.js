@@ -1,17 +1,17 @@
 import { EventService } from '../services/event.service.js';
 
 export const EventController = {
-  
+
   // GET /api/events - Lấy danh sách events với filter + pagination
   async getEvents(req, res) {
     try {
       const { page, limit, sort, ...filters } = req.query;
-      
+
       const result = await EventService.findEventsWithPagination(
         filters,
         { page, limit, sort }
       );
-      
+
       return res.json(result);
     } catch (e) {
       if (e.status) return res.status(e.status).json({ error: e.message });
@@ -34,7 +34,20 @@ export const EventController = {
   // GET /api/events/highlighted - Lấy events nổi bật
   async getHighlightedEvents(req, res) {
     try {
-      const events = await EventService.findHighlightedEvents(6);
+      const limit = parseInt(req.query.limit) || 6;
+      const events = await EventService.findHighlightedEvents(limit);
+      return res.json({ events });
+    } catch (e) {
+      console.error(e);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
+  },
+
+  // GET /api/events/most-discussed - Lấy events nhiều thảo luận nhất
+  async getMostDiscussedEvents(req, res) {
+    try {
+      const limit = parseInt(req.query.limit) || 6;
+      const events = await EventService.findEventsByMostPosts(limit);
       return res.json({ events });
     } catch (e) {
       console.error(e);
@@ -60,10 +73,10 @@ export const EventController = {
       // Get user info from authenticated user
       const userId = req.user.id;
       const userName = req.user.name || req.user.email;
-      
+
       // Create event
       const event = await EventService.createEvent(req.body, userId, userName);
-      
+
       return res.status(201).json({
         message: 'Tạo sự kiện thành công',
         event
@@ -81,23 +94,23 @@ export const EventController = {
       const eventId = req.params.id;
       const updateData = req.body; // Đã validated bởi middleware
       const currentEvent = req.event; // Từ canModifyEvent middleware
-      
+
       const updatedEvent = await EventService.updateEvent(
-        eventId, 
-        updateData, 
+        eventId,
+        updateData,
         currentEvent
       );
-      
+
       return res.status(200).json({
         message: 'Cập nhật sự kiện thành công',
         event: updatedEvent
       });
-      
+
     } catch (e) {
       if (e.status) {
-        return res.status(e.status).json({ 
+        return res.status(e.status).json({
           error: e.message,
-          details: e.details 
+          details: e.details
         });
       }
       console.error('updateEvent error:', e);
@@ -112,9 +125,9 @@ export const EventController = {
     try {
       const eventId = req.params.id;
       const currentEvent = req.event; // Từ canModifyEvent middleware
-      
+
       const updatedEvent = await EventService.submitForReview(eventId, currentEvent);
-      
+
       return res.status(200).json({
         message: 'Đã gửi sự kiện để duyệt. Vui lòng chờ ADMIN phê duyệt.',
         event: updatedEvent
@@ -131,9 +144,9 @@ export const EventController = {
     try {
       const eventId = req.params.id;
       const adminId = req.user.id;
-      
+
       const updatedEvent = await EventService.approveEvent(eventId, adminId);
-      
+
       return res.status(200).json({
         message: 'Đã duyệt sự kiện thành công',
         event: updatedEvent
@@ -151,9 +164,9 @@ export const EventController = {
       const eventId = req.params.id;
       const adminId = req.user.id;
       const { reason } = req.body;
-      
+
       const updatedEvent = await EventService.rejectEvent(eventId, adminId, reason);
-      
+
       return res.status(200).json({
         message: 'Đã từ chối sự kiện',
         event: updatedEvent
@@ -169,9 +182,9 @@ export const EventController = {
   async getPendingEvents(req, res) {
     try {
       const { page, limit } = req.query;
-      const result = await EventService.findPendingEvents({ 
-        page: parseInt(page) || 1, 
-        limit: parseInt(limit) || 10 
+      const result = await EventService.findPendingEvents({
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 10
       });
       return res.json(result);
     } catch (e) {

@@ -2,7 +2,7 @@ import express from 'express';
 import { EventController } from '../controllers/event.controller.js';
 import { isAuthenticated, hasRole, canModifyEvent } from '../middlewares/auth.middleware.js';
 import { validate } from '../middlewares/validate.middleware.js';
-import { 
+import {
   getEventsQuerySchema,
   suggestionsQuerySchema,
   eventIdParamSchema,
@@ -15,9 +15,9 @@ const router = express.Router();
 
 // ==================== CRUD SỰ KIỆN (MANAGER) ====================
 
-router.post('/', 
-  isAuthenticated, 
-  hasRole('MANAGER', 'ADMIN'), 
+router.post('/',
+  isAuthenticated,
+  hasRole('MANAGER', 'ADMIN'),
   validate(createEventSchema),
   EventController.createEvent
 );
@@ -67,17 +67,18 @@ router.patch('/:id/reject',
 );
 
 // ==================== PUBLIC ROUTES ====================
-router.get('/suggestions', 
-  validate(suggestionsQuerySchema, 'query'), 
+router.get('/suggestions',
+  validate(suggestionsQuerySchema, 'query'),
   EventController.getSuggestions
 );
+router.get('/most-discussed', EventController.getMostDiscussedEvents);
 router.get('/highlighted', EventController.getHighlightedEvents);
-router.get('/:id', 
-  validate(eventIdParamSchema, 'params'), 
+router.get('/:id',
+  validate(eventIdParamSchema, 'params'),
   EventController.getEventById
 );
-router.get('/', 
-  validate(getEventsQuerySchema, 'query'), 
+router.get('/',
+  validate(getEventsQuerySchema, 'query'),
   EventController.getEvents
 );
 
