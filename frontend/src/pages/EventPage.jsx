@@ -305,24 +305,24 @@ const EventPage = () => {
 
   // ========== POPUP LOGIC (NEW: fetch detail + status) ==========
   const handleCardClick = async (event) => {
-  try {
-    // 1) fetch detail event cho popup đầy đủ info
-    const res = await api.get(`api/events/${event.id}`);
-    const ev = res.data?.event;
-    const detail = ev ? mapApiEventToUiEvent(ev) : event;
+    try {
+      // 1) fetch detail event cho popup đầy đủ info
+      const res = await api.get(`api/events/${event.id}`);
+      const ev = res.data?.event;
+      const detail = ev ? mapApiEventToUiEvent(ev) : event;
 
-    // 2) fetch status -> set userStatus cho InfoEvent đổi nút
-    const st = await fetchRegistrationStatusApi(event.id);
-    const uiStatus = st === "NONE" ? null : normalizeStatus(st);
-    console.log(uiStatus);
-    setSelectedEvent(uiStatus ? { ...detail, userStatus: uiStatus } : detail);
-    setIsModalOpen(true);
-  } catch (e) {
-    console.error("handleCardClick error:", e);
-    setSelectedEvent(event);
-    setIsModalOpen(true);
-  }
-};
+      // 2) fetch status -> set userStatus cho InfoEvent đổi nút
+      const st = await fetchRegistrationStatusApi(event.id);
+      const uiStatus = st === "NONE" ? null : normalizeStatus(st);
+      console.log(uiStatus);
+      setSelectedEvent(uiStatus ? { ...detail, userStatus: uiStatus } : detail);
+      setIsModalOpen(true);
+    } catch (e) {
+      console.error("handleCardClick error:", e);
+      setSelectedEvent(event);
+      setIsModalOpen(true);
+    }
+  };
 
   const registerEventApi = async (eventId) => {
     const token = getAccessToken();
@@ -335,7 +335,7 @@ const EventPage = () => {
   };
 
   const handleRegister = async () => {
-    
+
     const token = getAccessToken();
 
     if (!token) {
@@ -386,7 +386,7 @@ const EventPage = () => {
         const st = await fetchRegistrationStatusApi(selectedEvent.id);
         const uiStatus = st === "NONE" ? null : normalizeStatus(st);
         setSelectedEvent((prev) => (prev ? { ...prev, userStatus: uiStatus } : prev));
-      } catch {}
+      } catch { }
 
       Swal.fire("Thành công", "Đăng ký thành công! Vui lòng chờ duyệt.", "success");
     } catch (err) {
@@ -405,7 +405,7 @@ const EventPage = () => {
           const st = await fetchRegistrationStatusApi(selectedEvent.id);
           const uiStatus = st === "NONE" ? null : normalizeStatus(st);
           setSelectedEvent((prev) => (prev ? { ...prev, userStatus: uiStatus } : prev));
-        } catch {}
+        } catch { }
         return;
       }
 
@@ -578,35 +578,33 @@ const EventPage = () => {
             <p className="text-gray-500 mt-2">
               {loading
                 ? "Đang tìm kiếm..."
-                : `Tìm thấy ${events.length} kết quả${
-                    searchTerm ? ` cho "${searchTerm}"` : ""
-                  }${locationFilter ? ` tại "${locationFilter}"` : ""}`}
+                : `Tìm thấy ${events.length} kết quả${searchTerm ? ` cho "${searchTerm}"` : ""
+                }${locationFilter ? ` tại "${locationFilter}"` : ""}`}
             </p>
           )}
         </div>
 
         {error && <div className="text-center text-red-500 mb-4">{error}</div>}
 
-        {loading ? (
-          <div className="text-center py-10 text-gray-500">
-            <p className="text-xl">Đang tải sự kiện...</p>
-          </div>
-        ) : events.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {events.map((item) => (
-              <div key={item.id} className="animate-fade-in">
-                {/* wrapper để ô event dài hơn */}
-                <div className="w-full min-h-[300px]">
+        <div className="min-h-[600px]">
+          {loading ? (
+            <div className="text-center py-10 text-gray-500 h-full flex items-center justify-center">
+              <p className="text-xl">Đang tải sự kiện...</p>
+            </div>
+          ) : events.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 content-start">
+              {events.map((item) => (
+                <div key={item.id} className="animate-fade-in">
                   <EventCard event={item} onClick={handleCardClick} />
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-10 text-gray-500">
-            <p className="text-xl">Không tìm thấy sự kiện nào phù hợp.</p>
-          </div>
-        )}
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-10 text-gray-500 h-full flex items-center justify-center">
+              <p className="text-xl">Không tìm thấy sự kiện nào phù hợp.</p>
+            </div>
+          )}
+        </div>
 
         {events.length > 0 && totalPages > 1 && (
           <div className="flex justify-center items-center mt-10 space-x-4">
