@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@layer components {
+     .underline-animated {
+        @apply inline-block relative;
+        @apply text-gray-800 transition-colors duration-300;
+        @apply hover:text-green-600;
+    }
+
+    .underline-animated::after {
+        @apply content-[''] absolute w-full;
+        @apply h-[2px];
+        @apply bottom-0 left-0;
+        @apply bg-green-600;
+        @apply transform scale-x-0 origin-center;
+        @apply transition-transform duration-300 ease-out;
+    }
+
+    .underline-animated:hover::after {
+        @apply scale-x-100;
+    }
+
+    .roboto-bold {
+        font-family: "Roboto", sans-serif;
+        font-optical-sizing: auto;
+        font-weight: 700; /* bold */
+        font-style: normal;
+        font-variation-settings: "wdth" 100;
+    }
+
+    .roboto-light {
+        font-family: "Roboto", sans-serif;
+        font-optical-sizing: auto;
+        font-weight: 300; /* light */
+        font-style: normal;
+        font-variation-settings: "wdth" 100;
+    }
+}
+
+:root {
+    --font-primary: 'Roboto', sans-serif;
+    --font-weight-normal: 400;
+    --font-weight-bold: 700;
+}
+
+body {
+    font-family: var(--font-primary);
+    font-weight: var(--font-weight-normal);
+}
