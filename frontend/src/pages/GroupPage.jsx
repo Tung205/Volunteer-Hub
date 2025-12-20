@@ -17,10 +17,10 @@ const MOCK_EVENT = {
 // Giả lập người dùng (Thay đổi role 'manager' <-> 'volunteer' để test)
 const CURRENT_USER = {
   id: 99,
-  name: "Nguyễn Văn A",
-  avatar: "https://ui-avatars.com/api/?name=Nguyen+Van+A&background=random",
+  name: "Nguyễn Văn Tôm",
+  avatar: "https://ui-avatars.com/api/?name=Nguyen+Van+T&background=random",
   // role: "volunteer" 
-  role: "manager"
+  role: "admin"
 };
 
 const GroupPage = () => {
@@ -444,9 +444,6 @@ const GroupPage = () => {
                   </button>
                   <button className="flex-1 flex justify-center items-center gap-2 py-2 hover:bg-gray-100 rounded-lg text-gray-600 font-medium">
                     <MessageCircle size={20} /> Bình luận
-                  </button>
-                  <button className="flex-1 flex justify-center items-center gap-2 py-2 hover:bg-gray-100 rounded-lg text-gray-600 font-medium">
-                    <Share2 size={20} /> Chia sẻ
                   </button>
                 </div>
 
