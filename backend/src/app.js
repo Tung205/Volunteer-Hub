@@ -6,7 +6,6 @@ import morgan from 'morgan';
 import authRoutes from './routes/auth.routes.js';
 import eventRoutes from './routes/event.routes.js';
 import registrationRoutes from './routes/registration.routes.js';
-import seedRouter from './seed.js'
 
 
 const app = express();
@@ -19,7 +18,6 @@ app.get('/health', (_req, res) => res.json({ ok: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/registrations', registrationRoutes);
-app.use('/api/seed', seedRouter);
 
 
 // error cuối
