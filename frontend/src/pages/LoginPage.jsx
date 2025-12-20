@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
@@ -16,9 +16,9 @@ const loginSchema = z.object({
         .email("Email hoặc mật khẩu không đúng định dạng"),
     password: z.string()
         .min(1, "Mật khẩu là bắt buộc")
-        .min(8, "Email hoặc mật khẩu không đúng định dạng") 
+        .min(8, "Email hoặc mật khẩu không đúng định dạng")
         .regex(
-            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}$/, 
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}$/,
             "Email hoặc mật khẩu không đúng định dạng"
         ),
     recaptcha: z.string().min(1, "Vui lòng xác nhận bạn là con người"),
@@ -32,6 +32,14 @@ function LoginPage() {
     const recaptchaRef = useRef(null);
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+
+    // Redirect if already logged in
+    useEffect(() => {
+        const token = localStorage.getItem('accessToken');
+        if (token) {
+            navigate('/dashboard', { replace: true });
+        }
+    }, [navigate]);
 
     const { register, handleSubmit, control, formState: { errors } } = useForm({
         resolver: zodResolver(loginSchema),
@@ -67,9 +75,9 @@ function LoginPage() {
                 const redirectUrl = params.get('redirect');
 
                 if (redirectUrl) {
-                    navigate(decodeURIComponent(redirectUrl));
+                    navigate(decodeURIComponent(redirectUrl), { replace: true });
                 } else {
-                    navigate('/dashboard');
+                    navigate('/dashboard', { replace: true });
                 }
             });
 
@@ -82,7 +90,7 @@ function LoginPage() {
                 text: error.response?.data?.error || 'Tài khoản hoặc mật khẩu không chính xác.',
             });
             recaptchaRef.current?.reset();
-        } 
+        }
     };
 
     const onError = (errorList) => {
@@ -135,7 +143,7 @@ function LoginPage() {
                             </div>
                             {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
                         </div>
-                        
+
                         <div className="flex justify-center">
                             <Controller
                                 name="recaptcha"
@@ -158,21 +166,21 @@ function LoginPage() {
                                 className={`
                                     w-full py-3 px-4 rounded-lg font-semibold text-lg transition duration-300
                                     flex items-center justify-center gap-2
-                                    ${isLoading 
+                                    ${isLoading
                                         ? 'bg-green-400 cursor-not-allowed'
                                         : 'bg-green-600 hover:bg-green-700 hover:cursor-pointer'
                                     }
                                     text-white
                                 `}
                             >
-                             {isLoading ? (
-                                <>
-                                    <AiOutlineLoading3Quarters className="animate-spin h-5 w-5" />
-                                    <span>Đang xử lý...</span>
-                                </>
-                             ) : (
-                                "Đăng nhập"
-                             )}   
+                                {isLoading ? (
+                                    <>
+                                        <AiOutlineLoading3Quarters className="animate-spin h-5 w-5" />
+                                        <span>Đang xử lý...</span>
+                                    </>
+                                ) : (
+                                    "Đăng nhập"
+                                )}
                             </button>
                         </div>
                         <p className="text-center text-sm text-gray-600">

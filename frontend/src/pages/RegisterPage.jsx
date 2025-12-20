@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import Swal from 'sweetalert2';
@@ -48,6 +48,15 @@ const registerSchema = z.object({
 
 function RegisterPage() {
     const navigate = useNavigate();
+
+    // Redirect if already logged in
+    useEffect(() => {
+        const token = localStorage.getItem('accessToken');
+        if (token) {
+            navigate('/dashboard', { replace: true });
+        }
+    }, [navigate]);
+
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isPolicyOpen, setIsPolicyOpen] = useState(false);
@@ -102,7 +111,7 @@ function RegisterPage() {
             Swal.fire({
                 icon: 'error',
                 title: 'Đăng ký thất bại',
-                html: errorMessage, 
+                html: errorMessage,
                 confirmButtonText: 'Thử lại',
                 confirmButtonColor: '#16a34a'
             });
@@ -209,20 +218,20 @@ function RegisterPage() {
                             <div className="flex items-center space-x-4">
                                 <div className="flex items-center">
                                     <input id="gender-nam" type="radio" value="Nam"
-                                           {...register("gender")}
-                                           className="h-4 w-4 text-green-600 border-gray-300 hover:cursor-pointer" />
+                                        {...register("gender")}
+                                        className="h-4 w-4 text-green-600 border-gray-300 hover:cursor-pointer" />
                                     <label htmlFor="gender-nam" className="ml-2 text-sm text-gray-900">Nam</label>
                                 </div>
                                 <div className="flex items-center">
                                     <input id="gender-nu" type="radio" value="Nữ"
-                                           {...register("gender")}
-                                           className="h-4 w-4 text-green-600 border-gray-300 hover:cursor-pointer" />
+                                        {...register("gender")}
+                                        className="h-4 w-4 text-green-600 border-gray-300 hover:cursor-pointer" />
                                     <label htmlFor="gender-nu" className="ml-2 text-sm text-gray-900">Nữ</label>
                                 </div>
                                 <div className="flex items-center">
                                     <input id="gender-khac" type="radio" value="Khác"
-                                           {...register("gender")}
-                                           className="h-4 w-4 text-green-600 border-gray-300 hover:cursor-pointer" />
+                                        {...register("gender")}
+                                        className="h-4 w-4 text-green-600 border-gray-300 hover:cursor-pointer" />
                                     <label htmlFor="gender-khac" className="ml-2 text-sm text-gray-900">Khác</label>
                                 </div>
                             </div>
@@ -237,9 +246,9 @@ function RegisterPage() {
                             />
                             <label htmlFor="acceptTerms" className="ml-2 block text-sm text-gray-900">
                                 Tôi chấp nhận những <button type="button" onClick={() => setIsPolicyOpen(true)} className="font-medium text-green-600 hover:underline"
-                            >
-                                chính sách
-                            </button> của Volunteer Hub
+                                >
+                                    chính sách
+                                </button> của Volunteer Hub
                             </label>
                         </div>
                         {errors.acceptTerms && <p className="text-red-500 text-sm">{errors.acceptTerms.message}</p>}
@@ -250,7 +259,7 @@ function RegisterPage() {
                                 className={`
                                     w-full py-3 px-4 rounded-lg font-semibold text-lg transition duration-300
                                     flex items-center justify-center gap-2
-                                    ${isLoading 
+                                    ${isLoading
                                         ? 'bg-green-400 cursor-not-allowed'
                                         : 'bg-green-600 hover:bg-green-700 hover:cursor-pointer'
                                     }

@@ -47,65 +47,73 @@ const HomePage = () => {
     const handleEventClick = (event) => {
         setSelectedEvent(event);
         setIsModalOpen(true);
-  };
-
-  const handleRegister = () => {
-      const isAuthenticated = localStorage.getItem('accessToken'); 
-  
-      if (!isAuthenticated) {
-        setIsModalOpen(false);
-  
-        // Tạo URL Redirect
-        const redirectUrl = `/events?eventId=${selectedEvent.id}&popup=true&autoRegister=true`;
-        
-        //don't log in
-        Swal.fire({
-          icon: 'warning',
-          title: 'Bạn chưa đăng nhập',
-          text: 'Vui lòng đăng nhập để đăng ký sự kiện!',
-          showCancelButton: true,
-          confirmButtonText: 'Đăng nhập ngay',
-          cancelButtonText: 'Hủy',
-          confirmButtonColor: '#16a34a'
-        }).then((result) => {
-          if (result.isConfirmed) {
-            //direct Login + redirect params
-            navigate(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
-          }
-        });
-        return;
-      }
-  
-      //log in
-      Swal.fire({
-          title: 'Đang xử lý...',
-          didOpen: () => Swal.showLoading(),
-          timer: 1000
-      }).then(() => {
-          const updatedEvents = events.map(ev => 
-              ev.id === selectedEvent.id ? { ...ev, userStatus: 'pending' } : ev
-          );
-          setEvents(updatedEvents);
-          
-          setSelectedEvent(prev => ({ ...prev, userStatus: 'pending' }));
-  
-          Swal.fire('Thành công', 'Đăng ký thành công! Vui lòng chờ duyệt.', 'success');
-      });
     };
-  
+
+    // Redirect if already logged in
+    React.useEffect(() => {
+        const token = localStorage.getItem('accessToken');
+        if (token) {
+            navigate('/dashboard', { replace: true });
+        }
+    }, [navigate]);
+
+    const handleRegister = () => {
+        const isAuthenticated = localStorage.getItem('accessToken');
+
+        if (!isAuthenticated) {
+            setIsModalOpen(false);
+
+            // Tạo URL Redirect
+            const redirectUrl = `/events?eventId=${selectedEvent.id}&popup=true&autoRegister=true`;
+
+            //don't log in
+            Swal.fire({
+                icon: 'warning',
+                title: 'Bạn chưa đăng nhập',
+                text: 'Vui lòng đăng nhập để đăng ký sự kiện!',
+                showCancelButton: true,
+                confirmButtonText: 'Đăng nhập ngay',
+                cancelButtonText: 'Hủy',
+                confirmButtonColor: '#16a34a'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    //direct Login + redirect params
+                    navigate(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
+                }
+            });
+            return;
+        }
+
+        //log in
+        Swal.fire({
+            title: 'Đang xử lý...',
+            didOpen: () => Swal.showLoading(),
+            timer: 1000
+        }).then(() => {
+            const updatedEvents = events.map(ev =>
+                ev.id === selectedEvent.id ? { ...ev, userStatus: 'pending' } : ev
+            );
+            setEvents(updatedEvents);
+
+            setSelectedEvent(prev => ({ ...prev, userStatus: 'pending' }));
+
+            Swal.fire('Thành công', 'Đăng ký thành công! Vui lòng chờ duyệt.', 'success');
+        });
+    };
+
     const handleJoinChat = () => {
-      navigate('/');
+        navigate('/');
     };
 
     const dummyEvents = [
         { id: 1, title: "Áo ấm cho em", location: "Hà Giang", date: "2/11/2025", userStatus: null },
-        { id: 2, title: "Chủ Nhật Xanh", location: "Hà Nội", date: "5/11/2025", userStatus: null},
+        { id: 2, title: "Chủ Nhật Xanh", location: "Hà Nội", date: "5/11/2025", userStatus: null },
         { id: 3, title: "Hiến máu nhân đạo", location: "Đà Nẵng", date: "10/11/2025", userStatus: null }
     ];
 
     return (
         <div className="flex flex-col w-full">
-            
+
             {/* SECTION 1*/}
             <section className="min-h-[90vh] bg-gradient-to-r from-green-600 to-green-200 flex flex-col md:flex-row items-center justify-evenly px-6 md:px-10 py-16">
                 <div className="max-w-3xl flex flex-col items-start text-justify">
@@ -143,7 +151,7 @@ const HomePage = () => {
                             <p className="text-gray-600 text-sm mt-1">để trở thành tình nguyện viên</p>
                         </div>
                         <BsArrowRight className="hidden md:block text-4xl text-gray-400 mt-12" />
-                        
+
                         {/* Step 2 */}
                         <div className="flex flex-col items-center w-64">
                             <div className="w-32 h-32 border-2 border-gray-400 rounded-lg flex items-center justify-center mb-4 bg-white shadow-sm">
@@ -172,14 +180,14 @@ const HomePage = () => {
                     <h2 className="text-3xl font-bold text-gray-800">Câu chuyện tình nguyện</h2>
                     <div className="w-50 h-1 bg-green-600 mx-auto mt-2"></div>
                 </div>
-                
+
                 <div className="w-full max-w-6xl mx-auto px-4">
-                     <AnimatedScroll key={activeStoryIndex} className="w-full">
+                    <AnimatedScroll key={activeStoryIndex} className="w-full">
                         <div className="flex flex-col md:flex-row items-center gap-10 justify-center min-h-[300px]">
                             <div className="w-64 h-64 flex-shrink-0">
-                                <img 
-                                    src={activeStory.image} 
-                                    alt={activeStory.name} 
+                                <img
+                                    src={activeStory.image}
+                                    alt={activeStory.name}
                                     className="w-full h-full object-cover rounded-full border-4 border-green-200 shadow-lg"
                                 />
                             </div>
@@ -220,7 +228,7 @@ const HomePage = () => {
                             <h3 className="text-xl font-bold text-gray-800 mb-2">{event.title}</h3>
                             <p className="text-gray-600 text-sm mb-1">📍 {event.location}</p>
                             <p className="text-gray-600 text-sm mb-4">📅 {event.date}</p>
-                            <button 
+                            <button
                                 onClick={() => handleEventClick(event)}
                                 className="mt-auto text-center block w-full py-2 rounded-full border border-green-600 text-green-600 font-semibold hover:bg-green-600 hover:text-white transition"
                             >
@@ -231,7 +239,7 @@ const HomePage = () => {
                 </div>
             </section>
 
-            <InfoEvent 
+            <InfoEvent
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 event={selectedEvent}

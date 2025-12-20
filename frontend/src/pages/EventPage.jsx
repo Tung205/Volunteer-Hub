@@ -228,7 +228,7 @@ const EventPage = () => {
 
 
   return (
-    <div className="w-full bg-gray-50 min-h-screen pb-10">
+    <div className="w-full bg-gray-50 min-h-screen pb-10 bg-gradient-to-br from-[#d4f8d4] to-[#a7e8a7]">
       
       {/*SECTION 1: BANNER & SEARCH*/}
       <section className="w-full h-[450px] md:h-[550px] relative">
@@ -324,7 +324,7 @@ const EventPage = () => {
       </section>
 
       {/*SECTION 2: List Event*/}
-      <section className="max-w-7xl mx-auto px-4 mt-12">
+      <section className="max-w-7xl mx-auto px-4 mt-12 ">
         <div className="text-center mb-10">
             <h2 className="text-2xl md:text-3xl font-bold text-green-700 inline-block border-b-4 border-green-500 pb-2">
                 Một số sự kiện dành cho bạn!
