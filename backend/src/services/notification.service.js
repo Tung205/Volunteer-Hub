@@ -1,8 +1,9 @@
 import webpush from 'web-push';
 import Subscription from '../models/subscription.model.js';
 
-const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || 'YOUR_PUBLIC_KEY';
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || 'YOUR_PRIVATE_KEY';
+// Hardcoded keys to resolve environment variable loading issues
+const VAPID_PUBLIC_KEY = 'BL0VNiUlDdC_zSCloOdyDTnAuHGow65nYeQ9YWA7xYSqaCxXrNpo4s5diPf_mKq7Kfap_Qqb_u4-3MHdwZyEiQI';
+const VAPID_PRIVATE_KEY = 'FKs1lyAUeiJzmNfeRmbjP62bIZ7abLzcdZVnHZFAvtM';
 
 webpush.setVapidDetails(
   'mailto:admin@volunteerhub.local',
