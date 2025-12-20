@@ -3,6 +3,42 @@ import mongoose from 'mongoose';
 import { Event } from '../models/event.model.js';
 
 /**
+ * Middleware optional auth:
+ * - Không có token -> guest -> next()
+ * - Có token hợp lệ -> set req.user -> next()
+ * - Có token nhưng invalid/expired -> 401
+ */
+export const optionalAuth = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      // guest
+      return next();
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    req.user = {
+      id: decoded.id,
+      email: decoded.email,
+      roles: decoded.roles || ["VOLUNTEER"],
+    };
+
+    return next();
+  } catch (error) {
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({ error: "INVALID_TOKEN", message: "Token không hợp lệ" });
+    }
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({ error: "TOKEN_EXPIRED", message: "Token đã hết hạn" });
+    }
+    return res.status(401).json({ error: "UNAUTHORIZED", message: "Xác thực thất bại" });
+  }
+};
+
+/**
  * Middleware xác thực user đã đăng nhập
  */
 export const isAuthenticated = async (req, res, next) => {

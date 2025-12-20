@@ -8,6 +8,9 @@ import {
   rejectRegistrationSchema 
 } from '../validations/registration.validation.js';
 
+import { optionalAuth } from "../middlewares/auth.middleware.js";
+import { getRegistrationStatus } from "../controllers/registration.controller.js";
+
 const router = express.Router();
 
 // ==================== REGISTRATION API (VOLUNTEER) ====================
@@ -62,6 +65,13 @@ router.patch('/:regId/reject',
   validate(rejectRegistrationSchema),
   canManageRegistrations,
   RegistrationController.rejectRegistration
+);
+
+router.get(
+  "/:eventId/status",
+  validate(eventIdParamSchema, "params"),
+  optionalAuth,
+  getRegistrationStatus
 );
 
 export default router;
