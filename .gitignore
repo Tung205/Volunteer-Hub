@@ -3,6 +3,7 @@ node_modules
 npm-debug.log*
 yarn-error.log
 .env
+
 # Vite build
 dist
 # Docker
@@ -10,3 +11,7 @@ docker/mongo-data
 # OS
 .DS_Store
 Thumbs.db
+.idea/
+*.iml
+README.md
+BACKEND_FLOW.md

@@ -1,11 +1,30 @@
 import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
-  email:        { type: String, required: true, unique: true, index: true },
+  email: { type: String, required: true, unique: true, index: true },
   passwordHash: { type: String, required: true },
-  name:         { type: String, default: '' },
-  roles:        { type: [String], default: ['VOLUNTEER'] },
-  status:       { type: String, default: 'ACTIVE' }
+  name: { type: String, default: '' },
+  roles: { type: [String], default: ['VOLUNTEER'] },
+  dateOfBirth: { type: Date, default: null },
+  gender: { type: String, enum: ['Nam', 'Nữ', 'Khác'], default: 'Khác' },
+  status: { type: String, enum: ['active', 'inactive', 'banned'], default: 'active' },
+
+  // Rate Limiting & Security
+  loginAttempts: { type: Number, default: 0 },
+  lockUntil: { type: Date },
+
+  // Password Reset
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
+  lastResetEmailSentAt: { type: Date },
+
+  history: [
+    {
+      text: { type: String, required: true },
+      time: { type: Date, required: true }
+    }
+  ],
+
 }, { timestamps: true });
 
 export const User = mongoose.model('User', userSchema);

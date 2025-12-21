@@ -28,6 +28,11 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN}
     depends_on:
       - mongo
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
 
   frontend:
     build: ./frontend
@@ -39,3 +44,6 @@ services:
       VITE_API_URL: http://localhost:${BACKEND_PORT}
     depends_on:
       - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
