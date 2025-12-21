@@ -95,6 +95,12 @@ const InfoEvent = ({
             Tham gia kênh chat
           </button>
         );
+      case 'rejected':
+        return (
+          <button disabled className="bg-red-400 text-white font-bold py-3 px-16 rounded-full cursor-not-allowed">
+            Đăng ký bị từ chối
+          </button>
+        )
       default:
         return (
           <button

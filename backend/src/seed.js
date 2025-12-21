@@ -202,7 +202,7 @@ export async function seedDatabase() {
     usedPairs.add(key);
 
     const status =
-      Math.random() < 0.15 ? "PENDING" : randomFromArray(["APPROVED", "COMPLETED"]);
+      Math.random() < 0.2 ? "REJECTED" : randomFromArray(["APPROVED", "PENDING"]);
 
     await Registration.create({
       eventId: event._id,
