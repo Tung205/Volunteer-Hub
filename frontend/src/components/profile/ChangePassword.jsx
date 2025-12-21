@@ -4,7 +4,7 @@ import Swal from 'sweetalert2';
 import api from '../../api/axios';
 import ForgotPassword from './ForgotPassword';
 
-const ChangePassword = ({ isOpen, onClose }) => {
+const ChangePassword = ({ isOpen, onClose, email }) => {
     const [oldPassword, setOldPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -147,6 +147,7 @@ const ChangePassword = ({ isOpen, onClose }) => {
             <ForgotPassword
                 isOpen={isForgotPasswordOpen}
                 onClose={() => setIsForgotPasswordOpen(false)}
+                email={email}
             />
         </>
     );

@@ -6,6 +6,7 @@ import RegisterPage from "./pages/RegisterPage.jsx";
 import EventPage from "./pages/EventPage.jsx";
 import DashBoard from "./pages/DashBoard.jsx";
 import GroupPage from "./pages/GroupPage.jsx";
+import ProtectedRoute from './components/ProtectedRoute.jsx';
 
 export default function App() {
   return (
@@ -13,8 +14,12 @@ export default function App() {
       <Route path='/' element={<MainLayout />}>
         <Route index element={<HomePage />} />
         <Route path="/events" element={<EventPage />} />
-        <Route path="/dashboard" element={<DashBoard />} />
-        <Route path="/group/:eventId" element={<GroupPage />} />
+
+        {/* Protected Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<DashBoard />} />
+          <Route path="/group/:eventId" element={<GroupPage />} />
+        </Route>
       </Route>
 
       <Route path="/login" element={<LoginPage />} />

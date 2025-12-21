@@ -1,13 +1,13 @@
 import mongoose from 'mongoose';
 
 const registrationSchema = new mongoose.Schema({
-  eventId:        { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true, index: true },
-  volunteerId:    { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-  volunteerName:  { type: String, default: '' },
+  eventId: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
+  volunteerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  volunteerName: { type: String, default: '' },
   volunteerEmail: { type: String, default: '' },
-  status:         { type: String, enum: ['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED', 'COMPLETED'], default: 'PENDING', index: true },
-  registeredAt:   { type: Date, default: Date.now },
-  approvedBy:     { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  status: { type: String, enum: ['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED', 'COMPLETED'], default: 'PENDING', index: true },
+  registeredAt: { type: Date, default: Date.now },
+  approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   rejectionReason: { type: String, default: '', maxlength: 500 }
 }, { timestamps: true });
 

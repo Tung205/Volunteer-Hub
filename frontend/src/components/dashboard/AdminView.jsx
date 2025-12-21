@@ -10,6 +10,7 @@ const AdminView = () => {
     const [showUserModal, setShowUserModal] = useState(false);
     const [showPendingListModal, setShowPendingListModal] = useState(false);
     const [selectedPendingEvent, setSelectedPendingEvent] = useState(null);
+    const [adminPendingListTab, setAdminTab] = useState('EVENTS'); // EVENTS | UPGRADES
 
     const getPendingCount = () => {
         return adminPendingList.EVENTS.length + adminPendingList.UPGRADES.length;
@@ -121,7 +122,7 @@ const AdminView = () => {
             {/* Pending List Modal */}
             {showPendingListModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[80vh]">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col h-[80vh]"> {/* Fixed Height */}
                         <div className="flex justify-between items-center p-4 border-b">
                             <h3 className="text-xl font-bold text-gray-800">Danh sách chờ duyệt</h3>
                             <button onClick={() => setShowPendingListModal(false)} className="text-gray-500 hover:text-red-500 transition">
@@ -129,68 +130,110 @@ const AdminView = () => {
                             </button>
                         </div>
 
-                        <div className="p-4 overflow-y-auto flex-1 bg-gray-50 space-y-6">
-                            {/* Events */}
-                            <div>
-                                <h4 className="font-bold text-gray-700 mb-2 flex items-center gap-2">
-                                    <FaClock className="text-green-600" /> Sự kiện chờ duyệt ({adminPendingList.EVENTS.length})
-                                </h4>
+                        {/* Tabs */}
+                        <div className="flex border-b bg-gray-50 px-4 pt-2">
+                            <button
+                                onClick={() => setAdminTab('EVENTS')}
+                                className={`pb-3 px-4 font-semibold text-sm transition relative ${adminPendingListTab === 'EVENTS' ? 'text-green-600' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <FaClock /> Sự kiện chờ duyệt
+                                    <span className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full">{adminPendingList.EVENTS.length}</span>
+                                </div>
+                                {adminPendingListTab === 'EVENTS' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600"></div>}
+                            </button>
+                            <button
+                                onClick={() => setAdminTab('UPGRADES')}
+                                className={`pb-3 px-4 font-semibold text-sm transition relative ${adminPendingListTab === 'UPGRADES' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <FaUserCog /> Nâng cấp Manager
+                                    <span className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full">{adminPendingList.UPGRADES.length}</span>
+                                </div>
+                                {adminPendingListTab === 'UPGRADES' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>}
+                            </button>
+                        </div>
+
+                        <div className="p-4 overflow-y-auto flex-1 bg-gray-50">
+                            {/* Events Tab */}
+                            {adminPendingListTab === 'EVENTS' && (
                                 <div className="space-y-2">
                                     {adminPendingList.EVENTS.length > 0 ? adminPendingList.EVENTS.map(evt => (
                                         <div
                                             key={evt.id}
                                             onClick={() => handleOpenReview(evt)}
-                                            className="bg-white p-3 rounded-lg border hover:border-green-500 cursor-pointer transition flex justify-between items-center group"
+                                            className="bg-white p-4 rounded-lg border border-gray-100 hover:border-green-500 cursor-pointer transition flex justify-between items-center group shadow-sm"
                                         >
                                             <div>
-                                                <span className="font-bold text-gray-800 block">{evt.title}</span>
-                                                <span className="text-xs text-gray-500">Bởi: {evt.organizerName}</span>
-                                            </div>
-                                            <button className="text-sm text-green-600 underline opacity-0 group-hover:opacity-100 transition">Xem chi tiết</button>
-                                        </div>
-                                    )) : <p className="text-sm text-gray-400 italic">Trống</p>}
-                                </div>
-                            </div>
-
-                            {/* Upgrades */}
-                            <div>
-                                <h4 className="font-bold text-gray-700 mb-2 flex items-center gap-2">
-                                    <FaUserCog className="text-blue-600" /> Yêu cầu nâng cấp Manager ({adminPendingList.UPGRADES.length})
-                                </h4>
-                                <div className="space-y-2">
-                                    {adminPendingList.UPGRADES.length > 0 ? adminPendingList.UPGRADES.map(req => (
-                                        <div key={req.id} className="bg-white p-4 rounded-lg border border-gray-100">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <div>
-                                                    <p className="font-bold text-gray-800">{req.userName}</p>
-                                                    <p className="text-sm text-gray-600 italic">"{req.reason}"</p>
-                                                    <p className="text-xs text-gray-400 mt-1">{req.date}</p>
+                                                <span className="font-bold text-gray-800 block text-lg">{evt.title}</span>
+                                                <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                                                    <span>Bởi: <span className="font-medium text-gray-700">{evt.organizerName}</span></span>
+                                                    <span>•</span>
+                                                    <span>{evt.date || 'TBD'}</span>
                                                 </div>
                                             </div>
-                                            <div className="flex justify-end gap-3 mt-2">
-                                                <button
-                                                    onClick={() => {
-                                                        Swal.fire("Đã duyệt", `Đã nâng cấp quyền cho ${req.userName}`, "success");
-                                                        setAdminPendingList(prev => ({ ...prev, UPGRADES: prev.UPGRADES.filter(i => i.id !== req.id) }));
-                                                    }}
-                                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-semibold transition"
-                                                >
-                                                    Duyệt
-                                                </button>
+                                            <button className="bg-green-50 text-green-600 px-3 py-1 rounded text-sm font-medium opacity-0 group-hover:opacity-100 transition">
+                                                Xem chi tiết
+                                            </button>
+                                        </div>
+                                    )) : (
+                                        <div className="flex flex-col items-center justify-center h-full text-gray-400 py-10">
+                                            <FaClock size={40} className="mb-2 opacity-20" />
+                                            <p className="italic">Không có sự kiện nào chờ duyệt</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Upgrades Tab */}
+                            {adminPendingListTab === 'UPGRADES' && (
+                                <div className="space-y-3">
+                                    {adminPendingList.UPGRADES.length > 0 ? adminPendingList.UPGRADES.map(req => (
+                                        <div key={req.id} className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                                                        {req.userName.charAt(0)}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-gray-800">{req.userName}</p>
+                                                        <p className="text-xs text-gray-400">{req.date}</p>
+                                                    </div>
+                                                </div>
+                                                <span className="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full font-medium">Pending</span>
+                                            </div>
+                                            <div className="bg-gray-50 p-3 rounded-md mb-3 text-sm text-gray-600 italic border border-gray-100">
+                                                "{req.reason}"
+                                            </div>
+                                            <div className="flex justify-end gap-3">
                                                 <button
                                                     onClick={() => {
                                                         Swal.fire("Đã từ chối", `Đã từ chối yêu cầu của ${req.userName}`, "info");
                                                         setAdminPendingList(prev => ({ ...prev, UPGRADES: prev.UPGRADES.filter(i => i.id !== req.id) }));
                                                     }}
-                                                    className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-1.5 rounded text-sm font-semibold transition"
+                                                    className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium text-sm transition"
                                                 >
                                                     Từ chối
                                                 </button>
+                                                <button
+                                                    onClick={() => {
+                                                        Swal.fire("Đã duyệt", `Đã nâng cấp quyền cho ${req.userName}`, "success");
+                                                        setAdminPendingList(prev => ({ ...prev, UPGRADES: prev.UPGRADES.filter(i => i.id !== req.id) }));
+                                                    }}
+                                                    className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition shadow-sm"
+                                                >
+                                                    Chấp nhận
+                                                </button>
                                             </div>
                                         </div>
-                                    )) : <p className="text-sm text-gray-400 italic">Trống</p>}
+                                    )) : (
+                                        <div className="flex flex-col items-center justify-center h-full text-gray-400 py-10">
+                                            <FaUserCog size={40} className="mb-2 opacity-20" />
+                                            <p className="italic">Không có yêu cầu nâng cấp nào</p>
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
+                            )}
                         </div>
                     </div>
                 </div>
