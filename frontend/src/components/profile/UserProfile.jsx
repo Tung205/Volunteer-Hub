@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { IoClose, IoPencil } from "react-icons/io5";
+import { FaUserCircle } from "react-icons/fa";
 import Swal from 'sweetalert2';
 import api from '../../api/axios';
 import ChangePassword from './ChangePassword';
-import ForgotPassword from './ForgotPassword';
 
 const UserProfile = ({ isOpen, onClose, user: initialUser }) => {
   const [userData, setUserData] = useState(null);
 
   // Form Data
-  const [name, setName] = useState(initialUser?.name || "");
+  const [name, setName] = useState(initialUser?.name || initialUser?.fullName || "");
   const [gender, setGender] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
 
@@ -22,11 +22,11 @@ const UserProfile = ({ isOpen, onClose, user: initialUser }) => {
     if (isOpen && initialUser) {
       const fetchProfile = async () => {
         try {
-          const res = await api.get('/users/me');
+          const res = await api.get('/api/users/me');
           const data = res.data.user;
           setUserData(data);
 
-          setName(data.name || "");
+          setName(data.name || data.fullName || "");
           setGender(data.gender || "MALE");
           if (data.dateOfBirth) {
             const formattedDate = new Date(data.dateOfBirth).toISOString().split('T')[0];
@@ -43,6 +43,18 @@ const UserProfile = ({ isOpen, onClose, user: initialUser }) => {
     }
   }, [isOpen, initialUser]);
 
+  // Lock Body Scroll
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const displayUser = userData || initialUser;
@@ -56,13 +68,8 @@ const UserProfile = ({ isOpen, onClose, user: initialUser }) => {
     if (!name.trim()) return Swal.fire("Lỗi", "Tên không được để trống", "warning");
 
     try {
-      const payload = {
-        name,
-        gender,
-        dateOfBirth,
-      };
-
-      const res = await api.patch('/users/me', payload);
+      const payload = { name, gender, dateOfBirth };
+      const res = await api.patch('/api/users/me', payload);
 
       Swal.fire("Thành công", "Cập nhật hồ sơ thành công!", "success");
       setUserData(res.data.user);
@@ -93,16 +100,12 @@ const UserProfile = ({ isOpen, onClose, user: initialUser }) => {
             {/* Top Section: Avatar & Info */}
             <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
               {/* Avatar */}
-              <div className="w-32 h-32 bg-green-100 rounded-full flex items-center justify-center text-green-600 text-5xl font-bold border-4 border-white shadow-md shrink-0">
-                {displayUser.name?.charAt(0).toUpperCase()}
+              <div className="shrink-0">
+                <FaUserCircle className="w-32 h-32 text-gray-300" />
               </div>
 
-              {/* Info Display (Removed H3 Name as per request to have it in Display name field only/or separate) 
-                    Actually user said: "tôi muốn phần này ... hiện ở Display name". 
-                    I'll keep the side info simple (Email, Status, Role) and let Name be in the form below.
-                */}
               <div className="flex-grow space-y-2 text-center md:text-left pt-2">
-                <p className="text-gray-500 font-medium">{displayUser.email}</p>
+                <p className="text-gray-500 font-medium text-lg">{displayUser.email}</p>
                 <div className="flex items-center justify-center md:justify-start gap-2">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${displayUser.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     {displayUser.status || 'ACTIVE'}
@@ -123,16 +126,18 @@ const UserProfile = ({ isOpen, onClose, user: initialUser }) => {
 
             {/* Detailed Info Form */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Display Name - Here is the "Display name" field where the user likely wants the Name to appear */}
               <div className="col-span-1 md:col-span-2">
-                <label className="block text-sm font-bold text-gray-700 mb-1">Tên hiển thị (Display Name)</label>
-                {/* Using the style of the H3 (2xl font bold) inside input if possible, or just standard input */}
+                <label className="block text-sm font-bold text-gray-700 mb-1">Tên hiển thị</label>
                 <input
                   type="text"
-                  value={name}
+                  value={displayUser.name} // Giá trị lấy từ state name (đã sync với API)
                   onChange={(e) => setName(e.target.value)}
                   disabled={!isEditing}
-                  className={`w-full px-4 py-2 border rounded-xl outline-none transition text-lg font-semibold ${isEditing ? 'border-green-500 bg-white' : 'bg-gray-50 border-gray-200 text-gray-800'}`}
+                  className={`w-full px-4 py-2 border rounded-xl outline-none transition text-lg font-semibold 
+                    ${isEditing
+                      ? 'border-green-500 bg-white'
+                      : 'bg-gray-50 border-gray-200 text-gray-800 disabled:opacity-100' // Giữ màu chữ đậm khi disable
+                    }`}
                 />
               </div>
 
@@ -164,7 +169,7 @@ const UserProfile = ({ isOpen, onClose, user: initialUser }) => {
               </div>
             </div>
 
-            {/* Change Password Button - Separated as requested */}
+            {/* Change Password Button */}
             <div className="border-t pt-6 flex justify-between items-center">
               <p className="text-gray-500 text-sm">Bạn muốn thay đổi mật khẩu?</p>
               <button
@@ -186,7 +191,6 @@ const UserProfile = ({ isOpen, onClose, user: initialUser }) => {
                   if (userData) {
                     setName(userData.name);
                     setGender(userData.gender);
-                    // Re-format dateOfBirth if it exists
                     if (userData.dateOfBirth) {
                       const dateObj = new Date(userData.dateOfBirth);
                       const formattedDate = dateObj.toISOString().split('T')[0];

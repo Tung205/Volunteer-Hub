@@ -17,6 +17,18 @@ const MyEvents = ({ isOpen, onClose }) => {
     const [activeTab, setActiveTab] = useState('UPCOMING'); // 'UPCOMING' | 'PAST'
     const navigate = useNavigate();
 
+    // Lock Body Scroll
+    React.useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     const displayedEvents = MY_EVENTS.filter(evt => evt.type === activeTab);

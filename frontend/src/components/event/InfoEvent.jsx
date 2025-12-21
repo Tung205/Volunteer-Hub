@@ -10,8 +10,20 @@ const InfoEvent = ({
   onJoinChat,
   isReviewMode = false, // Add new prop
   onApprove,
-  onReject
+  onReject,
 }) => {
+
+  // Lock Body Scroll
+  React.useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   //Nếu không mở hoặc chưa có data thì không render
   if (!isOpen) return null;
@@ -114,11 +126,11 @@ const InfoEvent = ({
           <div className="flex flex-col md:flex-row gap-6 items-stretch">
 
             <div className="w-full md:w-5/12 flex-shrink-0">
-                <img 
-                  src={coverImageUrl || "https://placehold.co/600x400?text=No+Image"}
-                  alt={title} 
-                  className="w-full h-[220px] md:h-full object-cover rounded-xl shadow-md border border-gray-100" 
-                />
+              <img
+                src={coverImageUrl || "https://placehold.co/600x400?text=No+Image"}
+                alt={title}
+                className="w-full h-[220px] md:h-full object-cover rounded-xl shadow-md border border-gray-100"
+              />
             </div>
 
             {/*Summary */}

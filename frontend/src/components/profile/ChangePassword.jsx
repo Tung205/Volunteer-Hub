@@ -11,6 +11,18 @@ const ChangePassword = ({ isOpen, onClose }) => {
     const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
+    // Lock Body Scroll
+    React.useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     const handleSubmit = async () => {
