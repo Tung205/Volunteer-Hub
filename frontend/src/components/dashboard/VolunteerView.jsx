@@ -1,14 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaCalculator, FaClock, FaUserCog, FaTimesCircle } from "react-icons/fa";
 import UpdateRole from './UpdateRole';
 import MyEvents from './MyEvents';
-import { MOCK_PENDING_DATA } from '../../data/mockData';
+import { getMyRegistrations } from '../../api/registrationApi';
 
 const VolunteerView = ({ roleName }) => { // roleName = 'TNV' or 'VOLUNTEER'
-    const [volunteerPendingList] = useState(MOCK_PENDING_DATA.VOLUNTEER);
+    const [registrations, setRegistrations] = useState([]);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [showMyEventsModal, setShowMyEventsModal] = useState(false);
     const [showPendingListModal, setShowPendingListModal] = useState(false);
+
+    useEffect(() => {
+        const fetchRegistrations = async () => {
+            const data = await getMyRegistrations();
+            setRegistrations(data);
+        };
+        fetchRegistrations();
+    }, []);
+
+    const joinedCount = registrations.filter(r => r.status === 'APPROVED' || r.status === 'COMPLETED').length;
+    const pendingList = registrations.filter(r => r.status === 'PENDING');
+
 
     return (
         <div className="space-y-6">
@@ -23,7 +35,7 @@ const VolunteerView = ({ roleName }) => { // roleName = 'TNV' or 'VOLUNTEER'
                         <FaCalculator size={20} />
                     </div>
                     <div className="mt-8 text-center">
-                        <span className="text-4xl font-black text-green-800 block mb-1">4</span>
+                        <span className="text-4xl font-black text-green-800 block mb-1">{joinedCount}</span>
                         <p className="font-bold text-gray-800 text-sm">Sự kiện tham gia</p>
                     </div>
                 </div>
@@ -38,7 +50,7 @@ const VolunteerView = ({ roleName }) => { // roleName = 'TNV' or 'VOLUNTEER'
                     </div>
                     <div className="mt-8 text-center">
                         <span className="text-4xl font-black text-green-800 block mb-1">
-                            {volunteerPendingList.length}
+                            {pendingList.length}
                         </span>
                         <p className="font-bold text-gray-800 text-sm">Chờ duyệt</p>
                     </div>
@@ -77,11 +89,11 @@ const VolunteerView = ({ roleName }) => { // roleName = 'TNV' or 'VOLUNTEER'
                         </div>
 
                         <div className="p-4 overflow-y-auto flex-1 bg-gray-50 space-y-3">
-                            {volunteerPendingList.length > 0 ? volunteerPendingList.map(item => (
-                                <div key={item.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex justify-between items-center">
+                            {pendingList.length > 0 ? pendingList.map(item => (
+                                <div key={item._id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex justify-between items-center">
                                     <div>
-                                        <p className="font-bold text-gray-800">{item.title}</p>
-                                        <p className="text-sm text-gray-500">{item.type === 'EVENT_REG' ? 'Đăng ký sự kiện' : 'Bài viết nhóm'} - {item.date}</p>
+                                        <p className="font-bold text-gray-800">{item.eventId?.title || 'Đang tải...'}</p>
+                                        <p className="text-sm text-gray-500">Đăng ký sự kiện - {new Date(item.registeredAt).toLocaleDateString('vi-VN')}</p>
                                     </div>
                                     <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold">
                                         {item.status}

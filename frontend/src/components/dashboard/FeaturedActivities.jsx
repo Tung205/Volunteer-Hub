@@ -35,23 +35,16 @@ const FeaturedActivities = () => {
         const fetchEvents = async () => {
             setLoading(true);
             try {
-                // --- MOCK DATA FOR TESTING LAYOUT (6 ITEMS) ---
-                const MOCK_TEST_EVENTS = Array(6).fill(null).map((_, index) => ({
-                    _id: `mock-${index}`,
-                    title: `Sự kiện Test Giao diện #${index + 1}`,
-                    location: "Hoạt động Ngoại khóa",
-                    startTime: new Date().toISOString(),
-                    coverImageUrl: "https://placehold.co/600x400?text=Event+" + (index + 1),
-                    organizerId: { name: "Admin Test" }
+                const data = await getFeaturedEvents(filterFeatured, 6);
+
+                // Map backend data to EventCard format
+                const mappedEvents = data.map(evt => ({
+                    ...evt,
+                    imageUrl: evt.coverImageUrl,
+                    date: new Date(evt.startTime).toLocaleDateString('vi-VN')
                 }));
 
-                // Simulate API delay
-                await new Promise(resolve => setTimeout(resolve, 500));
-                setEvents(MOCK_TEST_EVENTS);
-
-                // Original API call (Commented out for test)
-                // const data = await getFeaturedEvents(filterFeatured, 6);
-                // setEvents(data);
+                setEvents(mappedEvents);
             } catch (error) {
                 console.error("Failed to load events", error);
             } finally {

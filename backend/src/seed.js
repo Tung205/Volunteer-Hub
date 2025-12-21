@@ -65,7 +65,9 @@ export async function seedDatabase() {
     email: makeEmailFromName(adminName),
     passwordHash: passwordAdminHash,
     name: adminName,
+    dateOfBirth: new Date("2005-05-05"),
     roles: ["ADMIN"],
+
   });
 
   const managerNames = ["Nguyễn Thanh Tùng", "Nguyễn Đức Toàn"];
@@ -76,6 +78,7 @@ export async function seedDatabase() {
         email: makeEmailFromName(name),
         passwordHash: passwordManagerHash,
         name,
+        dateOfBirth: new Date("2005-05-05"),
         roles: ["MANAGER"],
       })
     );
@@ -94,6 +97,7 @@ export async function seedDatabase() {
         email: makeEmailFromName(name),
         passwordHash: passwordVolunteerHash,
         name,
+        dateOfBirth: new Date("2005-05-05"),
         roles: ["VOLUNTEER"],
       })
     );
