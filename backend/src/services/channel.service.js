@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Channel from '../models/channel.model.js';
 import Post from '../models/post.model.js';
 import Comment from '../models/comment.model.js';
+import { UserService } from './user.service.js';
 
 export const ChannelService = {
   /**
@@ -81,6 +82,12 @@ export const ChannelService = {
       likes: 0
     });
 
+    // Ghi lịch sử cho user
+    await UserService.pushHistory(
+      authorId,
+      'Bạn đã tạo một bài viết mới trong channel'
+    );
+
     // Populate author info before returning
     const populatedPost = await Post.findById(post._id)
       .populate('authorId', 'name email avatar')
@@ -119,6 +126,12 @@ export const ChannelService = {
       authorId,
       content
     });
+
+    // Ghi lịch sử cho user
+    await UserService.pushHistory(
+      authorId,
+      'Bạn đã bình luận vào một bài viết trong channel'
+    );
 
     // Populate author info before returning
     const populatedComment = await Comment.findById(comment._id)

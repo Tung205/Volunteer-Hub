@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { Event } from '../models/event.model.js';
+import { UserService } from './user.service.js';
 
 export const EventService = {
   
@@ -442,8 +443,20 @@ export const EventService = {
     .populate('approvedBy', 'name email')
     .lean();
     
-    // TODO: Gửi notification cho MANAGER
-    
+    // Ghi lịch sử cho MANAGER (organizer)
+    const managerId = updatedEvent?.organizerId?._id || updatedEvent?.organizerId;
+    const eventTitle = updatedEvent?.title || '';
+    if (managerId) {
+      await UserService.pushHistory(
+        managerId,
+        `Sự kiện "${eventTitle}" của bạn đã được Admin duyệt`
+      );
+    }
+    // Ghi lịch sử cho ADMIN
+    await UserService.pushHistory(
+      adminId,
+      `Bạn đã duyệt sự kiện "${eventTitle}" cho Manager "${updatedEvent?.organizerId?.name || ''}"`
+    );
     return updatedEvent;
   },
 
@@ -484,8 +497,20 @@ export const EventService = {
     .populate('approvedBy', 'name email')
     .lean();
     
-    // TODO: Gửi notification cho MANAGER với lý do từ chối
-    
+    // Ghi lịch sử cho MANAGER (organizer)
+    const managerId = updatedEvent?.organizerId?._id || updatedEvent?.organizerId;
+    const eventTitle = updatedEvent?.title || '';
+    if (managerId) {
+      await UserService.pushHistory(
+        managerId,
+        `Sự kiện "${eventTitle}" của bạn đã bị Admin từ chối`
+      );
+    }
+    // Ghi lịch sử cho ADMIN
+    await UserService.pushHistory(
+      adminId,
+      `Bạn đã từ chối sự kiện "${eventTitle}" của Manager "${updatedEvent?.organizerId?.name || ''}"`
+    );
     return updatedEvent;
   },
 

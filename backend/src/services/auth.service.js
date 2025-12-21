@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/user.model.js';
+import { UserService } from './user.service.js';
 
 export const AuthService = {
   async register({ email, password, name, dateOfBirth, gender }) {
@@ -10,6 +11,11 @@ export const AuthService = {
     }
     const passwordHash = await bcrypt.hash(password, 10);
     const doc = await User.create({ email, passwordHash, name, roles: ['VOLUNTEER'], dateOfBirth, gender });
+    // Ghi lịch sử cho user
+    await UserService.pushHistory(
+      doc._id,
+      'Bạn đã đăng ký tài khoản thành công'
+    );
     return { id: doc._id.toString(), email: doc.email, name: doc.name, dateOfBirth: doc.dateOfBirth, gender: doc.gender };
   },
 

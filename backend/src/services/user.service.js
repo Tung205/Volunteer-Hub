@@ -65,6 +65,12 @@ export const UserService = {
       throw error;
     }
 
+    // Ghi lịch sử cho user
+    await UserService.pushHistory(
+      userId,
+      'Bạn đã cập nhật hồ sơ cá nhân thành công'
+    );
+
     return {
       id: user._id,
       email: user.email,
