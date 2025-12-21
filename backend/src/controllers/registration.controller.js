@@ -1,7 +1,7 @@
 import { RegistrationService, getMyRegistrationStatus } from '../services/registration.service.js';
 
 export const RegistrationController = {
-  
+
   // POST /api/registrations/:eventId/register - TNV đăng ký tham gia sự kiện
   async register(req, res) {
     try {
@@ -11,9 +11,9 @@ export const RegistrationController = {
         name: req.user.name || '',
         email: req.user.email || ''
       };
-      
+
       const registration = await RegistrationService.registerEvent(eventId, userId, userInfo);
-      
+
       return res.status(201).json({
         success: true,
         message: 'Đăng ký sự kiện thành công. Vui lòng chờ MANAGER phê duyệt.',
@@ -27,7 +27,7 @@ export const RegistrationController = {
           details: error.details
         });
       }
-      
+
       // Handle validation errors
       if (error.name === 'ValidationError') {
         return res.status(400).json({
@@ -35,7 +35,7 @@ export const RegistrationController = {
           details: Object.values(error.errors).map(e => e.message)
         });
       }
-      
+
       // Handle duplicate key error (unique constraint)
       if (error.code === 11000) {
         return res.status(409).json({
@@ -43,7 +43,7 @@ export const RegistrationController = {
           details: 'Bạn đã đăng ký sự kiện này rồi'
         });
       }
-      
+
       console.error('Register error:', error);
       return res.status(500).json({ error: 'INTERNAL' });
     }
@@ -53,9 +53,9 @@ export const RegistrationController = {
   async getMyRegistrations(req, res) {
     try {
       const userId = req.user.id;
-      
+
       const registrations = await RegistrationService.getMyRegistrations(userId);
-      
+
       return res.status(200).json({
         success: true,
         data: registrations,
@@ -72,9 +72,9 @@ export const RegistrationController = {
     try {
       const eventId = req.params.eventId;
       const userId = req.user.id;
-      
+
       const registration = await RegistrationService.cancelRegistration(eventId, userId);
-      
+
       return res.status(200).json({
         success: true,
         message: 'Đã hủy đăng ký sự kiện thành công',
@@ -88,7 +88,7 @@ export const RegistrationController = {
           details: error.details
         });
       }
-      
+
       console.error('CancelRegistration error:', error);
       return res.status(500).json({ error: 'INTERNAL' });
     }
@@ -96,13 +96,30 @@ export const RegistrationController = {
 
   // ==================== MANAGER APIS ====================
 
+  // GET /api/registrations/pending - MANAGER xem danh sách yêu cầu chờ duyệt
+  async getPendingRegistrations(req, res) {
+    try {
+      const managerId = req.user.id;
+      const registrations = await RegistrationService.getManagerPendingRegistrations(managerId);
+
+      return res.status(200).json({
+        success: true,
+        data: registrations,
+        total: registrations.length
+      });
+    } catch (error) {
+      console.error('GetPendingRegistrations error:', error);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
+  },
+
   // GET /api/registrations/event/:eventId - MANAGER xem danh sách TNV đã đăng ký
   async getEventRegistrations(req, res) {
     try {
       const eventId = req.params.eventId;
-      
+
       const registrations = await RegistrationService.getEventRegistrations(eventId);
-      
+
       return res.status(200).json({
         success: true,
         data: registrations,
@@ -120,9 +137,9 @@ export const RegistrationController = {
     try {
       const regId = req.params.regId;
       const managerId = req.user.id;
-      
+
       const registration = await RegistrationService.approveRegistration(regId, managerId);
-      
+
       return res.status(200).json({
         success: true,
         message: 'Đã duyệt đăng ký thành công',
@@ -136,7 +153,7 @@ export const RegistrationController = {
           details: error.details
         });
       }
-      
+
       console.error('ApproveRegistration error:', error);
       return res.status(500).json({ error: 'INTERNAL' });
     }
@@ -148,9 +165,9 @@ export const RegistrationController = {
       const regId = req.params.regId;
       const managerId = req.user.id;
       const { reason } = req.body;
-      
+
       const registration = await RegistrationService.rejectRegistration(regId, managerId, reason);
-      
+
       return res.status(200).json({
         success: true,
         message: 'Đã từ chối đăng ký',
@@ -164,7 +181,7 @@ export const RegistrationController = {
           details: error.details
         });
       }
-      
+
       console.error('RejectRegistration error:', error);
       return res.status(500).json({ error: 'INTERNAL' });
     }

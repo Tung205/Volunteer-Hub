@@ -73,9 +73,10 @@ export const EventController = {
       // Get user info from authenticated user
       const userId = req.user.id;
       const userName = req.user.name || req.user.email;
+      const userEmail = req.user.email;
 
       // Create event
-      const event = await EventService.createEvent(req.body, userId, userName);
+      const event = await EventService.createEvent(req.body, userId, userName, userEmail);
 
       return res.status(201).json({
         message: 'Tạo sự kiện thành công',

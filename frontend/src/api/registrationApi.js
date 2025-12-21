@@ -11,6 +11,17 @@ export const getMyRegistrations = async () => {
     }
 };
 
+// Manager: Get all pending registrations for my events
+export const getPendingRegistrations = async () => {
+    try {
+        const response = await api.get('api/registrations/pending');
+        return response.data.data;
+    } catch (error) {
+        console.error("Error fetching pending registrations:", error);
+        throw error;
+    }
+};
+
 // Manager: Get registrations for a specific event
 export const getEventRegistrations = async (eventId) => {
     try {

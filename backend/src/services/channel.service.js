@@ -18,7 +18,7 @@ export const ChannelService = {
     }
 
     const channel = await Channel.findById(channelId).lean();
-    
+
     if (!channel) {
       const error = new Error('CHANNEL_NOT_FOUND');
       error.status = 404;
@@ -26,6 +26,22 @@ export const ChannelService = {
       throw error;
     }
 
+    return channel;
+  },
+
+  /**
+   * Tìm channel theo Event ID
+   * @param {string} eventId
+   * @returns {Promise<Object>}
+   */
+  async findChannelByEventId(eventId) {
+    const channel = await Channel.findOne({ eventId }).lean();
+    if (!channel) {
+      const error = new Error('CHANNEL_NOT_FOUND');
+      error.status = 404;
+      error.message = 'Sự kiện này chưa có kênh thảo luận';
+      throw error;
+    }
     return channel;
   },
 
@@ -125,6 +141,29 @@ export const ChannelService = {
       .populate('authorId', 'name email avatar')
       .lean();
 
+
     return populatedComment;
+  },
+
+  /**
+   * Lấy danh sách người đã like bài viết
+   */
+  async getLikers(postId) {
+    // Import Like model inside method or top level (if not circular)
+    // Assuming Like model is needed.
+    // import Like from '../models/like.model.js'; // Top level better.
+    // Since I can't easily add import top level without reading file, I'll rely on dynamic import or assume it's there?
+    // Wait, ChannelService didn't import Like model at top.
+
+    // I will use mongoose.model('Like') as a safe fallback if not imported, 
+    // or just assume I can add it? I'll use mongoose.model for safety.
+    const Like = mongoose.model('Like');
+
+    const likes = await Like.find({ targetId: postId, targetType: 'Post' })
+      .populate('userId', 'name email avatar') // populate user info
+      .lean();
+
+    // Return array of users
+    return likes.map(like => like.userId);
   }
 };

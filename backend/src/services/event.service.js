@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { Event } from '../models/event.model.js';
-
+import { Registration } from '../models/registration.model.js';
 export const EventService = {
 
   // QUERY BUILDERS  
@@ -42,6 +42,11 @@ export const EventService = {
       if (filters.endDate) {
         query.startTime.$lte = new Date(filters.endDate);
       }
+    }
+
+    // Filter by organizerId (exact match)
+    if (filters.organizerId) {
+      query.organizerId = filters.organizerId;
     }
 
     return query;
@@ -226,22 +231,51 @@ export const EventService = {
   },
 
   // CRUD OPERATIONS
-  async createEvent(eventData, organizerId, organizerName) {
+  async createEvent(eventData, organizerId, organizerName, organizerEmail) {
+    let session;
     try {
+      session = await mongoose.startSession();
+      session.startTransaction();
+
       // Set organizer info from authenticated user
       const newEvent = {
         ...eventData,
         organizerId,
         organizerName,
-        currentParticipants: 0
+        currentParticipants: 1 // Start with 1 (the organizer)
       };
 
       // Create event
-      const event = await Event.create(newEvent);
+      const event = await Event.create([newEvent], { session });
+      const createdEvent = event[0];
+
+      // Auto-register organizer as APPROVED
+      // Need to import Registration model. Since we are in EventService, we can use mongoose.model to avoid circular dependency if needed, 
+      // but importing at top is better if possible. 
+      // Assuming Registration model is available.
+      const Registration = mongoose.model('Registration');
+
+      await Registration.create([{
+        eventId: createdEvent._id,
+        volunteerId: organizerId,
+        volunteerName: organizerName || 'Organizer',
+        volunteerEmail: organizerEmail || 'organizer@volunteerhub.com', // Use passed email
+        status: 'APPROVED',
+        approvedBy: organizerId, // Self-approved
+        registeredAt: new Date()
+      }], { session });
+
+      await session.commitTransaction();
+      session.endSession();
 
       // Return created event as plain object
-      return event.toObject();
+      return createdEvent.toObject();
     } catch (error) {
+      if (session) {
+        await session.abortTransaction();
+        session.endSession();
+      }
+
       if (error.name === 'ValidationError') {
         const err = new Error('VALIDATION_ERROR');
         err.status = 400;

@@ -180,8 +180,6 @@ export async function seedDatabase() {
       status: "OPENED",
       approvedBy: admin._id,
       approvedAt: new Date(),
-
-      // ✅ ĐÚNG schema: coverImageUrl
       coverImageUrl: CLOUDINARY_IMAGE,
     });
 
@@ -220,7 +218,80 @@ export async function seedDatabase() {
     });
   }
 
-  console.log("✅ Seed done!");
+  // =====================
+  // 4) CHANNELS & POSTS
+  // =====================
+  for (const event of events) {
+    // 1. Create Channel for every event
+    const channel = await Channel.create({
+      name: `Thảo luận: ${event.title}`,
+      eventId: event._id,
+      description: `Kênh thảo luận chung cho sự kiện ${event.title}`,
+    });
+
+    // 2. Add some posts
+    const numPosts = Math.floor(Math.random() * 5); // 0-4 posts per channel
+    for (let j = 0; j < numPosts; j++) {
+      const author = randomFromArray(registrableUsers);
+      const post = await Post.create({
+        channelId: channel._id,
+        authorId: author._id,
+        authorName: author.name,
+        authorAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(author.name)}&background=random`,
+        content: randomFromArray([
+          "Mọi người ơi cho mình hỏi địa điểm tập trung cụ thể ở đâu ạ?",
+          "Có cần mang theo dụng cụ gì không mọi người?",
+          "Háo hức quá! Mong chờ đến ngày sự kiện.",
+          "BTC cho mình hỏi về lịch trình cụ thể với ạ.",
+          "Chào mọi người, mình là thành viên mới, mong được giúp đỡ!",
+          "Sự kiện này có hỗ trợ ăn trưa không ạ?",
+        ]),
+        images: Math.random() > 0.7 ? [CLOUDINARY_IMAGE] : [],
+        status: "APPROVED", // Auto approve for seed
+      });
+
+      // 3. Likes
+      const numLikes = Math.floor(Math.random() * 10);
+      for (let k = 0; k < numLikes; k++) {
+        const liker = randomFromArray(registrableUsers);
+        // Avoid duplicate likes (simplified check, might fail occasionally but ok for seed)
+        try {
+          await Like.create({
+            targetType: "Post",
+            targetId: post._id,
+            userId: liker._id,
+          });
+          // Update post like count
+          await Post.findByIdAndUpdate(post._id, { $inc: { likesCount: 1 } });
+        } catch (e) {
+          // Ignore duplicate likes
+        }
+      }
+
+      // 4. Comments
+      const numComments = Math.floor(Math.random() * 3);
+      for (let l = 0; l < numComments; l++) {
+        const commenter = randomFromArray(registrableUsers);
+        await Comment.create({
+          postId: post._id,
+          authorId: commenter._id,
+          authorName: commenter.name,
+          authorAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(commenter.name)}&background=random`,
+          content: randomFromArray([
+            "Mình cũng thắc mắc giống bạn.",
+            "Hẹn gặp mọi người nhé!",
+            "Inbox mình để biết thêm chi tiết nha.",
+            "Cùng câu hỏi!",
+            "Tuyệt vời!",
+          ]),
+        });
+        // Update post comment count
+        await Post.findByIdAndUpdate(post._id, { $inc: { commentsCount: 1 } });
+      }
+    }
+  }
+
+  console.log(" Seed done!");
   console.log(`Admin: ${admin.email} / Admin@123`);
   console.log(
     `Managers: ${managers.map((m) => `${m.email} / Manager@123`).join(" | ")}`

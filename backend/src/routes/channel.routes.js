@@ -25,6 +25,17 @@ router.get(
 );
 
 /**
+ * GET /channels/event/:eventId
+ * Lấy channel info theo eventId
+ * Auth: isAuthenticated
+ */
+router.get(
+  '/event/:eventId',
+  isAuthenticated,
+  ChannelController.getChannelByEvent
+);
+
+/**
  * POST /channels/:cid/posts
  * Tạo bài viết mới trong channel
  * Auth: isAuthenticated + isEventMember
@@ -36,6 +47,21 @@ router.post(
   validate(createPostBodySchema, 'body'),
   isEventMember,
   ChannelController.createPost
+);
+
+/**
+ * GET /channels/posts/:pid/likes
+ * Use ChannelController for convenience or PostController?
+ * ChannelController handles channel related. 
+ * Let's put it here for now as I added method to ChannelController.
+ * Actually route should probably be /api/posts/:pid/likes if in PostController, 
+ * but I added method to ChannelController.
+ * Let's map: /channels/posts/:pid/likes
+ */
+router.get(
+  '/posts/:pid/likes',
+  isAuthenticated,
+  ChannelController.getLikers
 );
 
 export default router;

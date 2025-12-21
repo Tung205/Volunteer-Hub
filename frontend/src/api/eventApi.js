@@ -23,6 +23,16 @@ export const getFeaturedEvents = async (filterType = 'newest', limit = 6) => {
     }
 };
 
+export const getManagedEvents = async (managerId, limit = 50) => {
+    try {
+        const response = await api.get('api/events', { params: { organizerId: managerId, limit } });
+        return response.data; // { events, pagination }
+    } catch (error) {
+        console.error("Error fetching managed events:", error);
+        throw error;
+    }
+};
+
 export const getEventById = async (id) => {
     try {
         const response = await api.get(`api/events/${id}`);

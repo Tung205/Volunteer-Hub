@@ -26,6 +26,24 @@ export const ChannelController = {
   },
 
   /**
+   * GET /channels/event/:eventId
+   * Lấy thông tin channel theo eventId
+   */
+  async getChannelByEvent(req, res) {
+    try {
+      const { eventId } = req.params;
+      const channel = await ChannelService.findChannelByEventId(eventId);
+      return res.json({ channel });
+    } catch (e) {
+      if (e.status) {
+        return res.status(e.status).json({ error: e.message });
+      }
+      console.error('ChannelController.getChannelByEvent error:', e);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
+  },
+
+  /**
    * POST /channels/:cid/posts
    * Tạo bài viết mới trong channel
    */
@@ -70,6 +88,22 @@ export const ChannelController = {
         return res.status(e.status).json({ error: e.message });
       }
       console.error('ChannelController.createComment error:', e);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
+  },
+
+  /**
+   * GET /posts/:pid/likes
+   * Lấy danh sách user đã like bài viết
+   */
+  async getLikers(req, res) {
+    try {
+      const { pid } = req.params;
+      const likers = await ChannelService.getLikers(pid);
+      return res.json({ likers });
+    } catch (e) {
+      if (e.status) return res.status(e.status).json({ error: e.message });
+      console.error("getLikers error:", e);
       return res.status(500).json({ error: 'INTERNAL' });
     }
   }
