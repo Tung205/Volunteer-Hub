@@ -142,8 +142,7 @@ export const RegistrationService = {
       status: 'PENDING'
     })
       .sort({ registeredAt: -1 })
-      // Populate event title manually or use lookup if needed, but we have event info.
-      // Let's populate minimal event info to be safe or map it.
+      .populate('volunteerId', 'name email avatar') // Populate user info
       .lean();
 
     // Map event title to registration for easier display
@@ -244,7 +243,7 @@ export const RegistrationService = {
           { $inc: { currentParticipants: -1 } }
         );
       }
-      
+
       // Ghi lịch sử cho volunteer
       const eventTitle = event?.title || '';
       await UserService.pushHistory(
@@ -343,7 +342,7 @@ export const RegistrationService = {
         .populate('volunteerId', 'name email')
         .populate('approvedBy', 'name email')
         .lean();
-      
+
       // Ghi lịch sử cho volunteer
       const volunteerId = result?.volunteerId?._id || result?.volunteerId;
       const eventTitle = event?.title || '';
@@ -413,7 +412,7 @@ export const RegistrationService = {
         .populate('approvedBy', 'name email')
         .lean();
 
-      
+
       // Ghi lịch sử cho volunteer
       const volunteerId = result?.volunteerId?._id || result?.volunteerId;
       const eventTitle = result?.eventId?.title || '';
