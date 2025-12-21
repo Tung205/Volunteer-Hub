@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { Event } from '../models/event.model.js';
 import { Registration } from '../models/registration.model.js';
 import { UserService } from './user.service.js';
+import { sendNotificationToUser } from './notification.service.js';
 
 export const RegistrationService = {
 

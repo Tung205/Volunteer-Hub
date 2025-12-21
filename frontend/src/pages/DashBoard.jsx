@@ -7,24 +7,91 @@ import AdminView from '../components/dashboard/AdminView';
 import FeaturedActivities from '../components/dashboard/FeaturedActivities';
 import RecentActivities from '../components/dashboard/RecentActivities';
 
+import { getProfile } from '../api/userApi';
+import api from '../api/axios'; // Axios instance
+
+const VAPID_PUBLIC_KEY = 'BL0VNiUlDdC_zSCloOdyDTnAuHGow65nYeQ9YWA7xYSqaCxXrNpo4s5diPf_mKq7Kfap_Qqb_u4-3MHdwZyEiQI';
+
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+        .replace(/\-/g, '+')
+        .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
 // --- MAIN COMPONENT ---
 const DashBoard = () => {
     console.log("DASHBOARD LAYOUT UPDATED v2 - PLEASE CHECK CONSOLE");
     const navigate = useNavigate();
     const [currentUserRole, setCurrentUserRole] = useState('TNV'); // 'TNV' | 'MANAGER' | 'ADMIN'
     const [userName, setUserName] = useState("Nguyễn Văn A");
+    const [userHistory, setUserHistory] = useState([]);
 
-    // Check login state
+    // Check login state and fetch profile
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            try {
-                const userObj = JSON.parse(storedUser);
-                setUserName(userObj.fullName || "User");
-                if (userObj.role) setCurrentUserRole(userObj.role);
-            } catch (e) {
-                console.error("Error parsing user data", e);
+        const fetchUserProfile = async () => {
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                try {
+                    const userObj = JSON.parse(storedUser);
+                    setUserName(userObj.fullName || "User");
+                    if (userObj.role) setCurrentUserRole(userObj.role);
+                } catch (e) {
+                    console.error("Error parsing user data", e);
+                }
             }
+
+            // Fetch fresh data including history
+            const profile = await getProfile();
+            if (profile) {
+                setUserName(profile.name);
+                setUserHistory(profile.history || []);
+                // Optional: Sync role if needed, but sticky role might be preferred for testing
+            }
+        };
+        fetchUserProfile();
+    }, []);
+
+    // Notification Subscription
+    useEffect(() => {
+        const subscribeToPush = async () => {
+            if (!('serviceWorker' in navigator)) return;
+
+            try {
+                const registration = await navigator.serviceWorker.register('/sw.js');
+
+                // Check permission
+                if (Notification.permission === 'default') {
+                    await Notification.requestPermission();
+                }
+
+                if (Notification.permission === 'granted') {
+                    const subscription = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                    });
+
+                    console.log("Push Subscription:", subscription);
+
+                    // Send to backend
+                    await api.post('/api/subscriptions', subscription);
+                }
+            } catch (error) {
+                console.error("Failed to subscribe to push", error);
+            }
+        };
+
+        // Only subscribe if user is logged in (we check storedUser, but api call will use token)
+        if (localStorage.getItem('user')) {
+            subscribeToPush();
         }
     }, []);
 
@@ -74,6 +141,7 @@ const DashBoard = () => {
                     <div className="lg:col-span-1 animate-slide-left h-full flex flex-col">
                         <RecentActivities
                             currentUserRole={currentUserRole}
+                            userHistory={userHistory}
                             className="h-full flex-1"
                         />
                     </div>

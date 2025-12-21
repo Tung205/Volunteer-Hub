@@ -20,3 +20,13 @@ export const getUserById = async (id) => {
         return null;
     }
 };
+
+export const getProfile = async () => {
+    try {
+        const response = await api.get('/api/users/me');
+        return response.data.user;
+    } catch (error) {
+        console.error("Error fetching profile:", error);
+        return null;
+    }
+};
