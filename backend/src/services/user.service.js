@@ -2,6 +2,17 @@ import { User } from '../models/user.model.js';
 
 export const UserService = {
   /**
+   * Lấy danh sách tất cả users (cho Admin export)
+   */
+  async getAllUsers() {
+    // Return all users, sorted by newest first
+    return await User.find({})
+      .select('-passwordHash')
+      .sort({ createdAt: -1 })
+      .lean();
+  },
+
+  /**
    * Lấy thông tin user theo ID
    * @param {string} userId 
    * @returns {Promise<Object>} - user object (không có passwordHash)

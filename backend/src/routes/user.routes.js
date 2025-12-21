@@ -14,6 +14,18 @@ const router = Router();
 router.get('/me', isAuthenticated, UserController.getProfile);
 
 /**
+ * GET /users
+ * Lấy danh sách tất cả users
+ * Auth: isAuthenticated + ADMIN
+ */
+router.get(
+  '/',
+  isAuthenticated,
+  hasRole('ADMIN'),
+  UserController.getAllUsers
+);
+
+/**
  * PATCH /users/me
  * Cập nhật profile của user đang đăng nhập
  * Auth: isAuthenticated

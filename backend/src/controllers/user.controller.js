@@ -21,6 +21,20 @@ export const UserController = {
   },
 
   /**
+   * GET /users (ADMIN only)
+   * Lấy tất cả users để export/quản lý
+   */
+  async getAllUsers(req, res) {
+    try {
+      const users = await UserService.getAllUsers();
+      return res.json({ users });
+    } catch (e) {
+      console.error('UserController.getAllUsers error:', e);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
+  },
+
+  /**
    * PATCH /users/me
    * Cập nhật profile của user đang đăng nhập
    */
