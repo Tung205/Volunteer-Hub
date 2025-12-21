@@ -240,6 +240,19 @@ export const EventService = {
       // Create event
       const event = await Event.create(newEvent);
 
+      // Ghi lịch sử cho MANAGER (organizer)
+      await UserService.pushHistory(
+        organizerId,
+        `Bạn đã tạo sự kiện "${event.title}"`
+      );
+      // Ghi lịch sử cho ADMIN nếu là admin tạo
+      if (event.roles && event.roles.includes('ADMIN')) {
+        await UserService.pushHistory(
+          organizerId,
+          `Bạn (ADMIN) đã tạo sự kiện "${event.title}"`
+        );
+      }
+
       // Return created event as plain object
       return event.toObject();
     } catch (error) {
@@ -349,7 +362,37 @@ export const EventService = {
         err.status = 404;
         throw err;
       }
-      
+
+      // Ghi lịch sử cho MANAGER (organizer) khi cập nhật event
+      const managerId = updatedEvent?.organizerId?._id || updatedEvent?.organizerId;
+      const eventTitle = updatedEvent?.title || '';
+      if (managerId) {
+        await UserService.pushHistory(
+          managerId,
+          `Bạn đã cập nhật sự kiện "${eventTitle}"`
+        );
+      }
+
+      // Nếu CLOSE_EVENT
+      if (updateData.status === 'CLOSED') {
+        if (managerId) {
+          await UserService.pushHistory(
+            managerId,
+            `Bạn đã đóng sự kiện "${eventTitle}"`
+          );
+        }
+      }
+
+      // Nếu CANCEL_EVENT
+      if (updateData.status === 'CANCELLED') {
+        if (managerId) {
+          await UserService.pushHistory(
+            managerId,
+            `Bạn đã hủy sự kiện "${eventTitle}"`
+          );
+        }
+      }
+
       return updatedEvent;
       
     } catch (error) {
@@ -403,6 +446,16 @@ export const EventService = {
       },
       { new: true }
     ).populate('organizerId', 'name email').lean();
+
+    // Ghi lịch sử cho MANAGER (organizer)
+    const managerId = updatedEvent?.organizerId?._id || updatedEvent?.organizerId;
+    const eventTitle = updatedEvent?.title || '';
+    if (managerId) {
+      await UserService.pushHistory(
+        managerId,
+        `Bạn đã gửi lại sự kiện "${eventTitle}" để duyệt`
+      );
+    }
     
     return updatedEvent;
   },
@@ -442,7 +495,20 @@ export const EventService = {
     .populate('organizerId', 'name email')
     .populate('approvedBy', 'name email')
     .lean();
-    
+
+    // // --- Tạo channel cho event vừa được duyệt nếu chưa có ---
+    // try {
+    //   const { default: Channel } = await import('../models/channel.model.js');
+    //   const eventObjectId = typeof updatedEvent._id === 'string' ? mongoose.Types.ObjectId(updatedEvent._id) : updatedEvent._id;
+    //   const existingChannel = await Channel.findOne({ eventId: eventObjectId });
+    //   if (!existingChannel) {
+    //     await Channel.create({ eventId: eventObjectId });
+    //   }
+    // } catch (err) {
+    //   // Log lỗi tạo channel nhưng không throw để không ảnh hưởng approveEvent
+    //   console.error('[approveEvent] Failed to create channel:', err);
+    // }
+
     // Ghi lịch sử cho MANAGER (organizer)
     const managerId = updatedEvent?.organizerId?._id || updatedEvent?.organizerId;
     const eventTitle = updatedEvent?.title || '';
@@ -512,6 +578,50 @@ export const EventService = {
       `Bạn đã từ chối sự kiện "${eventTitle}" của Manager "${updatedEvent?.organizerId?.name || ''}"`
     );
     return updatedEvent;
+  },
+
+  // ==================== DELETE EVENT ====================
+  /**
+   * Xóa sự kiện (chỉ ADMIN hoặc MANAGER owner)
+   * Ghi lịch sử cho organizer
+   */
+  async deleteEvent(eventId, deleterId) {
+    const event = await Event.findById(eventId).lean();
+    if (!event) {
+      const err = new Error('EVENT_NOT_FOUND');
+      err.status = 404;
+      throw err;
+    }
+    const deleted = await Event.findByIdAndDelete(eventId);
+    if (!deleted) {
+      const err = new Error('EVENT_NOT_FOUND');
+      err.status = 404;
+      throw err;
+    }
+    // Ghi lịch sử cho MANAGER (organizer)
+    const managerId = event?.organizerId?._id || event?.organizerId;
+    const eventTitle = event?.title || '';
+    if (managerId) {
+      await UserService.pushHistory(
+        managerId,
+        `Sự kiện "${eventTitle}" của bạn đã bị xóa`
+      );
+    }
+    // Ghi lịch sử cho người xóa nếu khác organizer
+    if (deleterId && String(deleterId) !== String(managerId)) {
+      await UserService.pushHistory(
+        deleterId,
+        `Bạn đã xóa sự kiện "${eventTitle}" của Manager "${event?.organizerName || ''}"`
+      );
+    }
+    // Nếu là admin 
+    if (deleterId && String(deleterId) === String(managerId)) {
+      await UserService.pushHistory(
+        deleterId,
+        `Bạn (ADMIN) đã xóa sự kiện "${eventTitle}" của mình`
+      );
+    }
+    return true;
   },
 
 

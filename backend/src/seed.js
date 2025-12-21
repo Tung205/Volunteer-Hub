@@ -2,8 +2,10 @@ import bcrypt from "bcryptjs";
 import { User } from "./models/user.model.js";
 import { Event } from "./models/event.model.js";
 import { Registration } from "./models/registration.model.js";
-
-// =====================
+import Channel from "./models/channel.model.js";
+import Post from "./models/post.model.js";
+import Comment from "./models/comment.model.js";
+import Like from "./models/like.model.js";
 // Helpers
 // =====================
 function randomFromArray(arr) {
