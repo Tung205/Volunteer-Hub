@@ -220,6 +220,7 @@ const UserProfile = ({ isOpen, onClose, user: initialUser }) => {
       <ChangePassword
         isOpen={isChangePasswordOpen}
         onClose={() => setIsChangePasswordOpen(false)}
+        email={displayUser.email}
       />
     </>
   );
