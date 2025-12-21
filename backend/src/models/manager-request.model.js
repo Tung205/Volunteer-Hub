@@ -18,6 +18,15 @@ const ManagerRequestSchema = new mongoose.Schema(
       enum: ['PENDING', 'APPROVED', 'REJECTED'],
       default: 'PENDING',
     },
+    adminId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      index: true,
+    },
+    rejectionReason: {
+      type: String,
+      maxlength: 500,
+    },
   },
   {
     timestamps: true,
