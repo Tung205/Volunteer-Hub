@@ -74,7 +74,7 @@ const ManagerView = () => {
             {/* Pending List Modal */}
             {showPendingListModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[80vh]">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col h-[80vh]"> {/* Fixed Height */}
                         <div className="flex justify-between items-center p-4 border-b">
                             <h3 className="text-xl font-bold text-gray-800">Quản lý yêu cầu</h3>
                             <button onClick={() => setShowPendingListModal(false)} className="text-gray-500 hover:text-red-500 transition">
@@ -82,23 +82,31 @@ const ManagerView = () => {
                             </button>
                         </div>
 
-                        <div className="p-4 overflow-y-auto flex-1 bg-gray-50">
-                            {/* Tabs */}
-                            <div className="flex mb-4 border-b">
-                                <button
-                                    onClick={() => setManagerTab('MANAGING')}
-                                    className={`pb-2 px-4 font-semibold ${managerTab === 'MANAGING' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-500'}`}
-                                >
-                                    Yêu cầu tham gia
-                                </button>
-                                <button
-                                    onClick={() => setManagerTab('OTHER')}
-                                    className={`pb-2 px-4 font-semibold ${managerTab === 'OTHER' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-500'}`}
-                                >
-                                    Khác (Của tôi)
-                                </button>
-                            </div>
+                        {/* Tabs */}
+                        <div className="flex border-b bg-gray-50 px-4 pt-2">
+                            <button
+                                onClick={() => setManagerTab('MANAGING')}
+                                className={`pb-3 px-4 font-semibold text-sm transition relative ${managerTab === 'MANAGING' ? 'text-green-600' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <FaClock /> Yêu cầu tham gia
+                                    <span className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full">{managerPendingList.MANAGING.length}</span>
+                                </div>
+                                {managerTab === 'MANAGING' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600"></div>}
+                            </button>
+                            <button
+                                onClick={() => setManagerTab('OTHER')}
+                                className={`pb-3 px-4 font-semibold text-sm transition relative ${managerTab === 'OTHER' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <FaUserCog /> Khác (Của tôi)
+                                    <span className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full">{managerPendingList.OTHER.length}</span>
+                                </div>
+                                {managerTab === 'OTHER' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>}
+                            </button>
+                        </div>
 
+                        <div className="p-4 overflow-y-auto flex-1 bg-gray-50">
                             {/* Content */}
                             {managerTab === 'MANAGING' ? (
                                 <div className="space-y-3">
