@@ -369,6 +369,35 @@ export const EventService = {
     }
   },
 
+  /**
+   * Đóng sự kiện (status -> CLOSED), chỉ cho MANAGER là owner
+   * @param {string} eventId
+   * @param {string} userId
+   * @returns {Promise<Event>}
+   */
+  async closeEventById(eventId, userId) {
+    const event = await Event.findById(eventId);
+    if (!event) {
+      const err = new Error('EVENT_NOT_FOUND');
+      err.status = 404;
+      throw err;
+    }
+    // Chỉ cho MANAGER là owner
+    if (event.organizerId.toString() !== userId) {
+      const err = new Error('FORBIDDEN');
+      err.status = 403;
+      throw err;
+    }
+    // Nếu đã closed thì không làm gì
+    if (event.status === 'CLOSED') {
+      return event;
+    }
+    event.status = 'CLOSED';
+    event.updatedAt = new Date();
+    await event.save();
+    return event;
+  },
+
   // ==================== APPROVAL WORKFLOW ====================
 
   /**

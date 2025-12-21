@@ -31,6 +31,13 @@ router.patch('/:id',
   EventController.updateEvent
 );
 
+router.post('/:id/closed',
+  isAuthenticated,
+  hasRole('MANAGER'),
+  validate(eventIdParamSchema, 'params'),
+  EventController.closeEvent
+);
+
 // ==================== APPROVAL WORKFLOW ====================
 
 // MANAGER: Resubmit event bị từ chối (REJECTED → PENDING)
