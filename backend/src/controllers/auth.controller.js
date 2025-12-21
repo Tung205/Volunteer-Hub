@@ -50,5 +50,33 @@ export const AuthController = {
       console.error(e);
       return res.status(500).json({ error: 'INTERNAL' });
     }
+  },
+
+  async forgotPassword(req, res) {
+    try {
+      console.log("forgotPassword called. User:", req.user, "Body:", req.body);
+      const { email } = req.body;
+      // Pass req.user (from optionalAuth) to service
+      const result = await AuthService.forgotPassword(email, req.user);
+      return res.status(200).json(result);
+    } catch (e) {
+      if (e.status) return res.status(e.status).json({ error: e.message });
+      console.error(e);
+      // For security, don't always reveal if user exists, but here we kind of do for UX
+      // If user not found, 404 is returned from service.
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
+  },
+
+  async resetPassword(req, res) {
+    try {
+      // Pass req.user to service
+      const result = await AuthService.resetPassword(req.body, req.user);
+      return res.status(200).json(result);
+    } catch (e) {
+      if (e.status) return res.status(e.status).json({ error: e.message });
+      console.error(e);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
   }
 };
