@@ -22,4 +22,21 @@ api.interceptors.request.use(
   }
 );
 
+// Add a response interceptor to handle 401 errors (Token expired/invalid)
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Token is invalid or expired
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+      // Redirect to login
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;
