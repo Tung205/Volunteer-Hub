@@ -35,4 +35,52 @@ export const ManagerRequestService = {
       throw error;
     }
   },
+
+  /**
+   * Cập nhật trạng thái yêu cầu trở thành Manager
+   * @param {string} requestId - ID của yêu cầu
+   * @param {string} status - Trạng thái mới (APPROVED hoặc REJECTED)
+   * @param {string} adminId - ID của Admin thực hiện duyệt
+   * @param {string} [rejectionReason] - Lý do từ chối (nếu có)
+   * @returns {Promise<Object>} - Yêu cầu đã được cập nhật
+   */
+  async updateRequestStatus(requestId, status, adminId, rejectionReason = null) {
+    try {
+      const request = await ManagerRequest.findById(requestId);
+
+      if (!request) {
+        const err = new Error('REQUEST_NOT_FOUND');
+        err.status = 404;
+        throw err;
+      }
+
+      if (request.status !== 'PENDING') {
+        const err = new Error('INVALID_REQUEST_STATUS');
+        err.status = 400;
+        err.details = 'Chỉ có thể duyệt yêu cầu ở trạng thái PENDING';
+        throw err;
+      }
+
+      request.status = status;
+      request.rejectionReason = status === 'REJECTED' ? rejectionReason : null;
+      request.adminId = adminId;
+      await request.save();
+
+      return request;
+    } catch (error) {
+      console.error('[ManagerRequestService] Error updating request status:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Từ chối yêu cầu trở thành Manager
+   * @param {string} requestId - ID của yêu cầu
+   * @param {string} adminId - ID của Admin thực hiện từ chối
+   * @param {string} rejectionReason - Lý do từ chối
+   * @returns {Promise<Object>} - Yêu cầu đã được cập nhật
+   */
+  async rejectManagerRequest(requestId, adminId, rejectionReason) {
+    return this.updateRequestStatus(requestId, 'REJECTED', adminId, rejectionReason);
+  },
 };
