@@ -89,3 +89,23 @@ export const getPendingEvents = async (page = 1, limit = 10) => {
         return { events: [], pagination: {} };
     }
 };
+
+export const approveEvent = async (eventId) => {
+    try {
+        const response = await api.patch(`/api/events/${eventId}/approve`);
+        return response.data;
+    } catch (error) {
+        console.error("Error approving event:", error);
+        throw error;
+    }
+};
+
+export const rejectEvent = async (eventId, reason) => {
+    try {
+        const response = await api.patch(`/api/events/${eventId}/reject`, { reason });
+        return response.data;
+    } catch (error) {
+        console.error("Error rejecting event:", error);
+        throw error;
+    }
+};

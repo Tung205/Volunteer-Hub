@@ -272,13 +272,15 @@ export const EventService = {
       // Ghi lịch sử cho MANAGER (organizer)
       await UserService.pushHistory(
         organizerId,
-        `Bạn đã tạo sự kiện "${event.title}"`
+        `Bạn đã tạo sự kiện "${createdEvent.title}"`
       );
+
       // Ghi lịch sử cho ADMIN nếu là admin tạo
-      if (event.roles && event.roles.includes('ADMIN')) {
+      const user = await UserService.getUserById(organizerId); // Need to fetch user to check roles
+      if (user && user.roles && user.roles.includes('ADMIN')) {
         await UserService.pushHistory(
           organizerId,
-          `Bạn (ADMIN) đã tạo sự kiện "${event.title}"`
+          `Bạn (ADMIN) đã tạo sự kiện "${createdEvent.title}"`
         );
       }
 
@@ -520,22 +522,27 @@ export const EventService = {
       },
       { new: true }
     )
-    .populate('organizerId', 'name email')
-    .populate('approvedBy', 'name email')
-    .lean();
+      .populate('organizerId', 'name email')
+      .populate('approvedBy', 'name email')
+      .lean();
 
-    // // --- Tạo channel cho event vừa được duyệt nếu chưa có ---
-    // try {
-    //   const { default: Channel } = await import('../models/channel.model.js');
-    //   const eventObjectId = typeof updatedEvent._id === 'string' ? mongoose.Types.ObjectId(updatedEvent._id) : updatedEvent._id;
-    //   const existingChannel = await Channel.findOne({ eventId: eventObjectId });
-    //   if (!existingChannel) {
-    //     await Channel.create({ eventId: eventObjectId });
-    //   }
-    // } catch (err) {
-    //   // Log lỗi tạo channel nhưng không throw để không ảnh hưởng approveEvent
-    //   console.error('[approveEvent] Failed to create channel:', err);
-    // }
+    // --- Tạo channel cho event vừa được duyệt nếu chưa có ---
+    try {
+      const { default: Channel } = await import('../models/channel.model.js');
+      const eventObjectId = typeof updatedEvent._id === 'string' ? new mongoose.Types.ObjectId(updatedEvent._id) : updatedEvent._id;
+      const existingChannel = await Channel.findOne({ eventId: eventObjectId });
+      if (!existingChannel) {
+        // Create channel with default name and description
+        await Channel.create({
+          eventId: eventObjectId,
+          name: `Thảo luận: ${updatedEvent.title}`,
+          description: `Kênh thảo luận chung cho sự kiện ${updatedEvent.title}`
+        });
+      }
+    } catch (err) {
+      // Log lỗi tạo channel nhưng không throw để không ảnh hưởng approveEvent
+      console.error('[approveEvent] Failed to create channel:', err);
+    }
 
     // Ghi lịch sử cho MANAGER (organizer)
     const managerId = updatedEvent?.organizerId?._id || updatedEvent?.organizerId;
@@ -587,10 +594,10 @@ export const EventService = {
       },
       { new: true }
     )
-    .populate('organizerId', 'name email')
-    .populate('approvedBy', 'name email')
-    .lean();
-    
+      .populate('organizerId', 'name email')
+      .populate('approvedBy', 'name email')
+      .lean();
+
     // Ghi lịch sử cho MANAGER (organizer)
     const managerId = updatedEvent?.organizerId?._id || updatedEvent?.organizerId;
     const eventTitle = updatedEvent?.title || '';

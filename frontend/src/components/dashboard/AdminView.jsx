@@ -4,7 +4,7 @@ import Swal from 'sweetalert2';
 import UserManagement from './UserManagement';
 import InfoEvent from '../event/InfoEvent';
 import { getAllUsers } from '../../api/userApi';
-import { getAllEventsForExport, getPendingEvents } from '../../api/eventApi';
+import { getAllEventsForExport, getPendingEvents, approveEvent, rejectEvent } from '../../api/eventApi';
 import { exportMergedToCSV, exportToJSON } from '../../utils/exportUtils';
 import api from '../../api/axios';
 
@@ -118,7 +118,7 @@ const AdminView = () => {
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
-                    await api.patch(`/api/events/${selectedPendingEvent._id}/approve`);
+                    await approveEvent(selectedPendingEvent._id);
 
                     setAdminPendingList(prev => ({
                         ...prev,
@@ -147,7 +147,7 @@ const AdminView = () => {
             if (result.isConfirmed) {
                 try {
                     const reason = result.value;
-                    await api.patch(`/api/events/${selectedPendingEvent._id}/reject`, { reason });
+                    await rejectEvent(selectedPendingEvent._id, reason);
 
                     setAdminPendingList(prev => ({
                         ...prev,
