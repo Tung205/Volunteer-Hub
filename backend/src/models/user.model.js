@@ -17,6 +17,14 @@ const userSchema = new mongoose.Schema({
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },
   lastResetEmailSentAt: { type: Date },
+
+  history: [
+    {
+      text: { type: String, required: true },
+      time: { type: Date, required: true }
+    }
+  ],
+
 }, { timestamps: true });
 
 export const User = mongoose.model('User', userSchema);

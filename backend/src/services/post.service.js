@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Post from '../models/post.model.js';
 import Comment from '../models/comment.model.js';
 import Like from '../models/like.model.js';
+import { UserService } from './user.service.js';
 
 export const PostService = {
   /**
@@ -34,6 +35,14 @@ export const PostService = {
       authorId,
       content
     });
+
+    // Ghi lịch sử cho user
+    const postObj = await Post.findById(postId).lean();
+    const postTitle = postObj?.content ? postObj.content.slice(0, 30) : '';
+    await UserService.pushHistory(
+      authorId,
+      `Bạn đã bình luận vào một bài viết${postTitle ? ': "' + postTitle + '..."' : ''}`
+    );
 
     // Populate author info before returning
     const populatedComment = await Comment.findById(comment._id)
@@ -131,7 +140,14 @@ export const PostService = {
 
     // Tạo like record và tăng counter
     await Like.create({ postId, userId });
-    
+
+    // Ghi lịch sử cho user
+    const postTitle = post?.content ? post.content.slice(0, 30) : '';
+    await UserService.pushHistory(
+      userId,
+      `Bạn đã thích một bài viết${postTitle ? ': "' + postTitle + '..."' : ''}`
+    );
+
     const updatedPost = await Post.findByIdAndUpdate(
       postId,
       { $inc: { likes: 1 } },
@@ -172,6 +188,12 @@ export const PostService = {
 
     // Nếu đã xóa được → giảm counter
     if (deleted) {
+      // Ghi lịch sử cho user
+      const postTitle = post?.content ? post.content.slice(0, 30) : '';
+      await UserService.pushHistory(
+        userId,
+        `Bạn đã bỏ thích một bài viết${postTitle ? ': "' + postTitle + '..."' : ''}`
+      );
       const updatedPost = await Post.findByIdAndUpdate(
         postId,
         { $inc: { likes: -1 } },

@@ -12,6 +12,7 @@ import postRoutes from './routes/post.routes.js';
 import userRoutes from './routes/user.routes.js';
 import subscriptionRoutes from './routes/subscription.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
+import managerRequestRoutes from './routes/manager-request.routes.js';
 
 
 const app = express();
@@ -27,10 +28,9 @@ app.use('/api/registrations', registrationRoutes);
 app.use('/api/channels', channelRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/users', userRoutes);
-
 app.use('/api/subscriptions', subscriptionRoutes);
-
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/manager-requests', managerRequestRoutes);
 
 
 // error cuối
