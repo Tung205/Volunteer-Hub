@@ -38,6 +38,14 @@ router.post('/:id/closed',
   EventController.closeEvent
 );
 
+// MANAGER: Hủy sự kiện (OPENED → CANCELLED)
+router.post('/:id/cancelled',
+  isAuthenticated,
+  hasRole('MANAGER'),
+  validate(eventIdParamSchema, 'params'),
+  EventController.cancelEvent
+);
+
 // ==================== APPROVAL WORKFLOW ====================
 
 // MANAGER: Resubmit event bị từ chối (REJECTED → PENDING)

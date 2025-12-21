@@ -398,6 +398,38 @@ export const EventService = {
     return event;
   },
 
+  /**
+   * Hủy sự kiện (status -> CANCELLED), chỉ cho MANAGER là owner, chỉ OPENED mới được hủy
+   * @param {string} eventId
+   * @param {string} userId
+   * @returns {Promise<Event>}
+   */
+  async cancelEventById(eventId, userId) {
+    const event = await Event.findById(eventId);
+    if (!event) {
+      const err = new Error('EVENT_NOT_FOUND');
+      err.status = 404;
+      throw err;
+    }
+    // Chỉ cho MANAGER là owner
+    if (event.organizerId.toString() !== userId) {
+      const err = new Error('FORBIDDEN');
+      err.status = 403;
+      throw err;
+    }
+    // Chỉ OPENED mới được hủy
+    if (event.status !== 'OPENED') {
+      const err = new Error('INVALID_STATUS_TRANSITION');
+      err.status = 400;
+      err.details = `Chỉ sự kiện đang OPENED mới được hủy. Hiện tại: ${event.status}`;
+      throw err;
+    }
+    event.status = 'CANCELLED';
+    event.updatedAt = new Date();
+    await event.save();
+    return event;
+  },
+
   // ==================== APPROVAL WORKFLOW ====================
 
   /**
