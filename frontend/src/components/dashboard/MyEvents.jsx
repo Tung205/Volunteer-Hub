@@ -1,26 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaTimesCircle, FaHistory, FaCalendarCheck, FaMapMarkerAlt, FaCalendarAlt } from "react-icons/fa";
-
-// Mock Data
-const MY_EVENTS = [
-    // Đang tham gia / Sắp tới
-    { id: 1, title: "Mùa hè xanh 2025", location: "Hà Giang", date: "20/07/2025", status: "Sắp diễn ra", type: "UPCOMING" },
-    { id: 2, title: "Dọn dẹp Hồ Tây", location: "Hà Nội", date: "25/01/2025", status: "Đang diễn ra", type: "UPCOMING" },
-    // Đã tham gia
-    { id: 3, title: "Hiến máu nhân đạo", location: "Hà Nội", date: "10/12/2024", status: "Đã hoàn thành", type: "PAST" },
-    { id: 4, title: "Tiếp sức mùa thi 2024", location: "TP.HCM", date: "05/06/2024", status: "Đã hoàn thành", type: "PAST" },
-    { id: 5, title: "Áo ấm vùng cao", location: "Lào Cai", date: "15/11/2024", status: "Đã hoàn thành", type: "PAST" },
-];
+import { getMyRegistrations } from '../../api/registrationApi';
 
 const MyEvents = ({ isOpen, onClose }) => {
     const [activeTab, setActiveTab] = useState('UPCOMING'); // 'UPCOMING' | 'PAST'
+    const [registrations, setRegistrations] = useState([]);
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     // Lock Body Scroll
-    React.useEffect(() => {
+    useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = 'hidden';
+            fetchRegistrations();
         } else {
             document.body.style.overflow = 'unset';
         }
@@ -29,13 +22,76 @@ const MyEvents = ({ isOpen, onClose }) => {
         };
     }, [isOpen]);
 
+    const fetchRegistrations = async () => {
+        setLoading(true);
+        try {
+            const data = await getMyRegistrations();
+            setRegistrations(data || []);
+        } catch (error) {
+            console.error("Failed to load registrations", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     if (!isOpen) return null;
 
-    const displayedEvents = MY_EVENTS.filter(evt => evt.type === activeTab);
+    // Filter Logic
+    const displayedEvents = registrations.filter(reg => {
+        const event = reg.eventId;
+        if (!event) return false;
+
+        const now = new Date();
+        const startTime = new Date(event.startTime);
+        const endTime = new Date(event.endTime);
+        const isCompleted = reg.status === 'COMPLETED' || reg.status === 'ATTENDED';
+        const isApproved = reg.status === 'APPROVED';
+
+        if (activeTab === 'UPCOMING') {
+            // Hiển thị nếu đã duyệt VÀ (chưa diễn ra hoặc đang diễn ra)
+            return isApproved && endTime >= now;
+        } else {
+            // Hiển thị nếu đã hoàn thành HOẶC (đã duyệt nhưng đã qua thời gian)
+            return isCompleted || (isApproved && endTime < now) || reg.status === 'REJECTED';
+            // Note: REJECTED might not belong in "Participated", but "History" might include it. 
+            // For now let's show Approved Past and Completed.
+        }
+    }).map(reg => {
+        // Map to display format
+        const event = reg.eventId;
+        return {
+            id: event._id,
+            title: event.title,
+            location: event.location,
+            date: new Date(event.startTime).toLocaleDateString('vi-VN'),
+            status: reg.status,
+            coverImageUrl: event.coverImageUrl
+        };
+    });
 
     const handleEventClick = (eventId) => {
-        onClose(); // Đóng modal trước
-        navigate(`/group/${eventId}`); // Chuyển trang
+        onClose();
+        navigate(`/group/${eventId}`);
+    };
+
+    const getStatusBadge = (status) => {
+        switch (status) {
+            case 'APPROVED': return 'bg-green-100 text-green-700';
+            case 'PENDING': return 'bg-yellow-100 text-yellow-700';
+            case 'REJECTED': return 'bg-red-100 text-red-700';
+            case 'COMPLETED': return 'bg-blue-100 text-blue-700';
+            default: return 'bg-gray-100 text-gray-600';
+        }
+    };
+
+    const getStatusText = (status) => {
+        switch (status) {
+            case 'APPROVED': return 'Đã duyệt';
+            case 'PENDING': return 'Chờ duyệt';
+            case 'REJECTED': return 'Từ chối';
+            case 'COMPLETED': return 'Hoàn thành';
+            default: return status;
+        }
     };
 
     return (
@@ -70,7 +126,11 @@ const MyEvents = ({ isOpen, onClose }) => {
 
                 {/* List */}
                 <div className="p-4 overflow-y-auto flex-1 bg-gray-50 space-y-3 custom-scrollbar">
-                    {displayedEvents.length > 0 ? (
+                    {loading ? (
+                        <div className="flex justify-center py-10">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                        </div>
+                    ) : displayedEvents.length > 0 ? (
                         displayedEvents.map(event => (
                             <div
                                 key={event.id}
@@ -82,11 +142,8 @@ const MyEvents = ({ isOpen, onClose }) => {
                                     <span className="flex items-center gap-1"><FaMapMarkerAlt /> {event.location}</span>
                                     <span className="flex items-center gap-1"><FaCalendarAlt /> {event.date}</span>
                                 </div>
-                                <span className={`inline-block px-2 py-1 rounded text-[10px] font-bold ${event.status === 'Đã hoàn thành'
-                                    ? 'bg-gray-200 text-gray-600'
-                                    : 'bg-green-100 text-green-700'
-                                    }`}>
-                                    {event.status}
+                                <span className={`inline-block px-2 py-1 rounded text-[10px] font-bold ${getStatusBadge(event.status)}`}>
+                                    {getStatusText(event.status)}
                                 </span>
                             </div>
                         ))

@@ -1,20 +1,20 @@
 import api from './axios';
 
-export const getFeaturedEvents = async (filterType = 'newest', limit = 8) => {
+export const getFeaturedEvents = async (filterType = 'newest', limit = 6) => {
     try {
         let response;
         if (filterType === 'newest') {
-            response = await api.get('/events', { params: { sort: 'newest', limit } });
+            response = await api.get('api/events', { params: { sort: 'newest', limit } });
             return response.data.events;
         } else if (filterType === 'members') {
-            response = await api.get('/events/highlighted', { params: { limit } });
+            response = await api.get('api/events/highlighted', { params: { limit } });
             return response.data.events;
         } else if (filterType === 'posts') {
-            response = await api.get('/events/most-discussed', { params: { limit } });
+            response = await api.get('api/events/most-discussed', { params: { limit } });
             return response.data.events;
         } else {
             // Fallback
-            response = await api.get('/events', { params: { limit } });
+            response = await api.get('api/events', { params: { limit } });
             return response.data.events;
         }
     } catch (error) {
@@ -25,7 +25,7 @@ export const getFeaturedEvents = async (filterType = 'newest', limit = 8) => {
 
 export const getEventById = async (id) => {
     try {
-        const response = await api.get(`/events/${id}`);
+        const response = await api.get(`api/events/${id}`);
         return response.data.event;
     } catch (error) {
         console.error("Error fetching event details:", error);
