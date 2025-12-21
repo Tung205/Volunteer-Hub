@@ -1,6 +1,21 @@
 import { User } from '../models/user.model.js';
 
 export const UserService = {
+    /**
+     * Ghi lại lịch sử hoạt động cho user
+     * @param {string} userId
+     * @param {string} text - Nội dung lịch sử
+     * @param {Date} [time] - Thời gian, mặc định là hiện tại
+     * @returns {Promise<void>}
+     */
+    async pushHistory(userId, text, time = new Date()) {
+      await User.findByIdAndUpdate(
+        userId,
+        { $push: { history: { text, time } } },
+        { new: true }
+      );
+    },
+    
   /**
    * Lấy thông tin user theo ID
    * @param {string} userId 
@@ -25,7 +40,8 @@ export const UserService = {
       roles: user.roles,
       dateOfBirth: user.dateOfBirth,
       gender: user.gender,
-      createdAt: user.createdAt
+      createdAt: user.createdAt,
+      history: user.history || []
     };
   },
 
@@ -56,7 +72,8 @@ export const UserService = {
       roles: user.roles,
       dateOfBirth: user.dateOfBirth,
       gender: user.gender,
-      createdAt: user.createdAt
+      createdAt: user.createdAt,
+      history: user.history || []
     };
   },
 

@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { Event } from '../models/event.model.js';
 import { Registration } from '../models/registration.model.js';
+import { UserService } from './user.service.js';
 
 export const RegistrationService = {
   
@@ -112,6 +113,12 @@ export const RegistrationService = {
         registration = newRegistration.toObject();
       }
       
+      // Ghi lịch sử cho volunteer
+      const eventTitle = event?.title || '';
+      await UserService.pushHistory(
+        userId,
+        `Bạn đã gửi yêu cầu tham gia sự kiện "${eventTitle}"`,
+      );
       return registration;
       
     } catch (error) {
@@ -206,6 +213,12 @@ export const RegistrationService = {
         );
       }
       
+      // Ghi lịch sử cho volunteer
+      const eventTitle = event?.title || '';
+      await UserService.pushHistory(
+        userId,
+        `Bạn đã hủy đăng ký sự kiện "${eventTitle}"`,
+      );
       return registration.toObject();
       
     } catch (error) {
@@ -299,6 +312,23 @@ export const RegistrationService = {
         .populate('approvedBy', 'name email')
         .lean();
       
+      // Ghi lịch sử cho volunteer
+      const volunteerId = result?.volunteerId?._id || result?.volunteerId;
+      const eventTitle = event?.title || '';
+      if (volunteerId) {
+        await UserService.pushHistory(
+          volunteerId,
+          `Bạn đã được duyệt tham gia sự kiện "${eventTitle}"`,
+        );
+      }
+      // Ghi lịch sử cho manager
+      const manager = await UserService.getUserById(managerId);
+      if (manager) {
+        await UserService.pushHistory(
+          managerId,
+          `Bạn đã duyệt đăng ký cho TNV "${result?.volunteerId?.name || ''}" trong sự kiện "${eventTitle}"`,
+        );
+      }
       return result;
       
     } catch (error) {
@@ -351,6 +381,23 @@ export const RegistrationService = {
         .populate('approvedBy', 'name email')
         .lean();
       
+      // Ghi lịch sử cho volunteer
+      const volunteerId = result?.volunteerId?._id || result?.volunteerId;
+      const eventTitle = result?.eventId?.title || '';
+      if (volunteerId) {
+        await UserService.pushHistory(
+          volunteerId,
+          `Yêu cầu tham gia sự kiện "${eventTitle}" của bạn đã bị từ chối`,
+        );
+      }
+      // Ghi lịch sử cho manager
+      const manager = await UserService.getUserById(managerId);
+      if (manager) {
+        await UserService.pushHistory(
+          managerId,
+          `Bạn đã từ chối đăng ký của TNV "${result?.volunteerId?.name || ''}" trong sự kiện "${eventTitle}"`,
+        );
+      }
       return result;
       
     } catch (error) {

@@ -8,6 +8,12 @@ const userSchema = new mongoose.Schema({
   dateOfBirth:  { type: Date, default: null },
   gender:       { type: String, enum: ['Nam', 'Nữ', 'Khác'], default: 'Khác' },
   status:       { type: String, enum: ['active', 'inactive', 'banned'], default: 'active' },
+  history: [
+    {
+      text: { type: String, required: true },
+      time: { type: Date, required: true }
+    }
+  ],
 }, { timestamps: true });
 
 export const User = mongoose.model('User', userSchema);
