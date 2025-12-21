@@ -36,22 +36,17 @@ const AdminView = () => {
     };
 
     const handleExport = async () => {
-        // Step 1: Choose Format
-        const { value: format } = await Swal.fire({
-            title: 'Chọn định dạng xuất',
-            text: 'Sẽ xuất cả danh sách Người dùng và Sự kiện',
-            input: 'radio',
-            inputOptions: {
-                'csv': 'CSV (Excel)',
-                'json': 'JSON'
-            },
-            inputValue: 'csv',
+        // Confirm Export
+        const { isConfirmed } = await Swal.fire({
+            title: 'Xuất dữ liệu?',
+            text: 'Tải xuống toàn bộ dữ liệu dưới dạng JSON',
+            icon: 'question',
             showCancelButton: true,
-            confirmButtonText: 'Tải xuống',
+            confirmButtonText: 'Tải json',
             cancelButtonText: 'Hủy'
         });
 
-        if (!format) return;
+        if (!isConfirmed) return;
 
         // Show Loading
         Swal.fire({
@@ -74,21 +69,18 @@ const AdminView = () => {
 
             const filename = 'volunteer_hub_full_data';
 
-            if (format === 'csv') {
-                exportMergedToCSV(users, events, filename);
-            } else {
-                // Merge for JSON
-                const mergedData = {
-                    users: users,
-                    events: events
-                };
-                exportToJSON(mergedData, filename);
-            }
+            // Merge for JSON
+            const mergedData = {
+                users: users,
+                events: events
+            };
+            exportToJSON(mergedData, filename);
+
 
             Swal.fire({
                 icon: 'success',
                 title: 'Đã xuất dữ liệu!',
-                text: `Đã tải xuống file ${filename}.${format}`,
+                text: `Đã tải xuống file ${filename}.json`,
                 timer: 2000,
                 showConfirmButton: false
             });

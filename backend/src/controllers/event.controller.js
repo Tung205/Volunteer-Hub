@@ -192,5 +192,16 @@ export const EventController = {
       console.error('getPendingEvents error:', e);
       return res.status(500).json({ error: 'INTERNAL' });
     }
+  },
+
+  // GET /api/events/export-all - ADMIN lấy danh sách ALL events
+  async exportAllEvents(req, res) {
+    try {
+      const events = await EventService.getAllEventsForExport();
+      return res.json({ events });
+    } catch (e) {
+      console.error('exportAllEvents error:', e);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
   }
 };
