@@ -71,8 +71,8 @@ export const getEventById = async (id) => {
 
 export const getAllEventsForExport = async () => {
     try {
-        // Fetch with high limit to get "all" events
-        const response = await api.get('api/events', { params: { limit: 1000, sort: 'newest' } });
+        // Fetch ALL events from admin-specific endpoint
+        const response = await api.get('api/events/export-all');
         return response.data.events;
     } catch (error) {
         console.error("Error fetching all events for export:", error);

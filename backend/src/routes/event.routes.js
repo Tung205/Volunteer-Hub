@@ -49,6 +49,13 @@ router.get('/pending',
   EventController.getPendingEvents
 );
 
+// ADMIN: Lấy tất cả events để export (phải đặt trước /:id)
+router.get('/export-all',
+  isAuthenticated,
+  hasRole('ADMIN'),
+  EventController.exportAllEvents
+);
+
 // ADMIN: Duyệt event (PENDING → OPENED)
 router.patch('/:id/approve',
   isAuthenticated,

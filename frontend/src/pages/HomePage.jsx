@@ -7,6 +7,7 @@ import { HiOutlineCalendar, HiUserGroup } from 'react-icons/hi';
 // Components
 import AnimatedScroll from "../components/AnimatedScroll.jsx";
 import InfoEvent from '../components/event/InfoEvent';
+import { getFeaturedEvents } from '../api/eventApi';
 
 import introDashboard_1 from '../assets/introDashboard.png';
 import userStory1 from '../assets/userStory1.png';
@@ -41,8 +42,29 @@ const HomePage = () => {
     const [activeStoryIndex, setActiveStoryIndex] = useState(0);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [featuredEvents, setFeaturedEvents] = useState([]);
     const activeStory = stories[activeStoryIndex];
     const navigate = useNavigate();
+
+    // Fetch Featured Events (Highlighted)
+    React.useEffect(() => {
+        const fetchEvents = async () => {
+            try {
+                // 'members' maps to /api/events/highlighted
+                const events = await getFeaturedEvents('members', 3);
+                if (events && events.length > 0) {
+                    setFeaturedEvents(events);
+                } else {
+                    // Fallback to dummy if no events
+                    // setFeaturedEvents(dummyEvents); 
+                    // Or simply leave empty
+                }
+            } catch (error) {
+                console.error("Failed to load featured events", error);
+            }
+        };
+        fetchEvents();
+    }, []);
 
     const handleEventClick = (event) => {
         setSelectedEvent(event);
@@ -104,12 +126,6 @@ const HomePage = () => {
     const handleJoinChat = () => {
         navigate('/');
     };
-
-    const dummyEvents = [
-        { id: 1, title: "Áo ấm cho em", location: "Hà Giang", date: "2/11/2025", userStatus: null },
-        { id: 2, title: "Chủ Nhật Xanh", location: "Hà Nội", date: "5/11/2025", userStatus: null },
-        { id: 3, title: "Hiến máu nhân đạo", location: "Đà Nẵng", date: "10/11/2025", userStatus: null }
-    ];
 
     return (
         <div className="flex flex-col w-full">
@@ -220,14 +236,38 @@ const HomePage = () => {
                     <div className="w-50 h-1 bg-green-600 mx-auto mt-2"></div>
                 </div>
                 <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 px-6">
-                    {dummyEvents.map((event) => (
-                        <div key={event.id} className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition p-6 border border-green-100 flex flex-col">
-                            <div className="h-40 bg-gray-200 rounded-xl mb-4 flex items-center justify-center text-gray-400">
-                                [Ảnh sự kiện]
+                    {featuredEvents.length > 0 ? featuredEvents.map((event) => (
+                        <div key={event._id} className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition p-6 border border-green-100 flex flex-col h-full">
+                            <div className="h-48 bg-gray-200 rounded-xl mb-4 overflow-hidden relative group">
+                                {event.coverImageUrl ? (
+                                    <img
+                                        src={event.coverImageUrl}
+                                        alt={event.title}
+                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                        onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/400x200?text=Volunteer+Hub' }}
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100">
+                                        <HiOutlineCalendar size={48} className="opacity-50" />
+                                    </div>
+                                )}
+                                <div className="absolute top-2 right-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded shadow-sm">
+                                    HOT
+                                </div>
                             </div>
-                            <h3 className="text-xl font-bold text-gray-800 mb-2">{event.title}</h3>
-                            <p className="text-gray-600 text-sm mb-1">📍 {event.location}</p>
-                            <p className="text-gray-600 text-sm mb-4">📅 {event.date}</p>
+
+                            <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2 min-h-[56px]">{event.title}</h3>
+
+                            <div className="flex items-center text-gray-600 text-sm mb-2">
+                                <span className="mr-2">📍</span>
+                                <span className="truncate">{event.location}</span>
+                            </div>
+
+                            <div className="flex items-center text-gray-600 text-sm mb-6">
+                                <span className="mr-2">📅</span>
+                                <span>{new Date(event.startTime).toLocaleDateString('vi-VN')}</span>
+                            </div>
+
                             <button
                                 onClick={() => handleEventClick(event)}
                                 className="mt-auto text-center block w-full py-2 rounded-full border border-green-600 text-green-600 font-semibold hover:bg-green-600 hover:text-white transition"
@@ -235,7 +275,11 @@ const HomePage = () => {
                                 Xem chi tiết
                             </button>
                         </div>
-                    ))}
+                    )) : (
+                        <div className="col-span-3 text-center py-10 text-gray-500 italic">
+                            Hiện chưa có sự kiện nổi bật nào.
+                        </div>
+                    )}
                 </div>
             </section>
 

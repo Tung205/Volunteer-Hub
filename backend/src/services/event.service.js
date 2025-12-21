@@ -164,6 +164,7 @@ export const EventService = {
     return event;
   },
 
+
   async findHighlightedEvents(limit = 6) {
     const now = new Date();
 
@@ -181,6 +182,15 @@ export const EventService = {
       .lean();
 
     return events;
+  },
+
+  // ADMIN EXPORT: Get ALL events without pagination
+  async getAllEventsForExport() {
+    return await Event.find({})
+      .sort({ createdAt: -1 }) // Newest first
+      .populate('organizerId', 'name email')
+      .populate('approvedBy', 'name email') // Include approver info
+      .lean();
   },
 
   // async searchEventSuggestions(searchQuery, limit = 10) {
