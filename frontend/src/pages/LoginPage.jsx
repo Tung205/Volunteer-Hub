@@ -46,6 +46,30 @@ function LoginPage() {
         mode: "onBlur"
     });
 
+    const [lockoutUntil, setLockoutUntil] = useState(null);
+    const [timeLeft, setTimeLeft] = useState(0);
+
+    // Timer for lockout
+    useEffect(() => {
+        let timer;
+        if (lockoutUntil) {
+            // Update immediately
+            setTimeLeft(Math.ceil((lockoutUntil - Date.now()) / 1000));
+
+            timer = setInterval(() => {
+                const remaining = Math.ceil((lockoutUntil - Date.now()) / 1000);
+                if (remaining <= 0) {
+                    setLockoutUntil(null); // Unlock
+                    setTimeLeft(0);
+                    clearInterval(timer);
+                } else {
+                    setTimeLeft(remaining); // Trigger re-render
+                }
+            }, 1000);
+        }
+        return () => clearInterval(timer);
+    }, [lockoutUntil]);
+
     const onSubmit = async (data) => {
         try {
             // Validation Captcha
@@ -84,10 +108,21 @@ function LoginPage() {
         } catch (error) {
             setIsLoading(false);
             console.error("Lỗi đăng nhập:", error);
+
+            const status = error.response?.status;
+            const errorMsg = error.response?.data?.error || 'Tài khoản hoặc mật khẩu không chính xác.';
+
+            // Handle Lockout (403)
+            if (status === 403) {
+                if (errorMsg.includes("tạm khóa") || errorMsg.includes("1 phút")) {
+                    setLockoutUntil(Date.now() + 60000);
+                }
+            }
+
             Swal.fire({
                 icon: 'error',
-                title: 'Đăng nhập thất bại',
-                text: error.response?.data?.error || 'Tài khoản hoặc mật khẩu không chính xác.',
+                title: status === 403 ? 'Tài khoản bị khóa/hạn chế' : 'Đăng nhập thất bại',
+                text: errorMsg,
             });
             recaptchaRef.current?.reset();
         }
@@ -162,7 +197,7 @@ function LoginPage() {
                         <div>
                             <button
                                 type="submit"
-                                disabled={isLoading}
+                                disabled={isLoading || !!lockoutUntil}
                                 className={`
                                     w-full py-3 px-4 rounded-lg font-semibold text-lg transition duration-300
                                     flex items-center justify-center gap-2
@@ -178,6 +213,8 @@ function LoginPage() {
                                         <AiOutlineLoading3Quarters className="animate-spin h-5 w-5" />
                                         <span>Đang xử lý...</span>
                                     </>
+                                ) : lockoutUntil ? (
+                                    `Vui lòng đợi ${timeLeft}s`
                                 ) : (
                                     "Đăng nhập"
                                 )}

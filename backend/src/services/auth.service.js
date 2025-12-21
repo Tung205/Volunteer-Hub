@@ -50,10 +50,13 @@ export const AuthService = {
       await user.save();
     }
 
-    // // kiểm tra status
-    // if (user.status !== 'ACTIVE') {
-    //   const err = new Error('ACCOUNT_INACTIVE'); err.status = 403; throw err;
-    // }
+    // Check status
+    if (user.status !== 'active') {
+      const err = new Error('ACCOUNT_RESTRICTED');
+      err.status = 403;
+      err.message = 'Tài khoản của bạn đang bị hạn chế';
+      throw err;
+    }
 
     const token = jwt.sign(
       { id: user._id, email: user.email, roles: user.roles },
