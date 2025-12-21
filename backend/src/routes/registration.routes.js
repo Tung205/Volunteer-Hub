@@ -2,10 +2,10 @@ import express from 'express';
 import { RegistrationController } from '../controllers/registration.controller.js';
 import { isAuthenticated, hasRole, canManageRegistrations } from '../middlewares/auth.middleware.js';
 import { validate } from '../middlewares/validate.middleware.js';
-import { 
-  eventIdParamSchema, 
-  regIdParamSchema, 
-  rejectRegistrationSchema 
+import {
+  eventIdParamSchema,
+  regIdParamSchema,
+  rejectRegistrationSchema
 } from '../validations/registration.validation.js';
 
 import { optionalAuth } from "../middlewares/auth.middleware.js";
