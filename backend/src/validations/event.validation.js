@@ -1,7 +1,7 @@
 import Joi from 'joi';
 
 // ==================== CONSTANTS ====================
-const PUBLIC_STATUS = ['OPENED', 'CLOSED', 'CANCELLED'];
+const PUBLIC_STATUS = ['OPENED', 'CLOSED', 'CANCELLED', 'PENDING', 'REJECTED'];
 const ALL_STATUS = ['PENDING', 'OPENED', 'REJECTED', 'CLOSED', 'CANCELLED'];
 
 // Location pattern: Unicode letters, numbers, spaces, common punctuation

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { FaCalendarPlus, FaTimesCircle, FaMapMarkerAlt, FaFileAlt, FaCalendarAlt, FaUsers } from "react-icons/fa";
+import { FaCalendarPlus, FaTimesCircle, FaMapMarkerAlt, FaFileAlt, FaCalendarAlt, FaUsers, FaSpinner } from "react-icons/fa";
 import Swal from 'sweetalert2';
+import { createEvent } from '../../api/eventApi';
 
 const PROVINCES = [
     "Thành phố Hà Nội", "Thành phố Huế", "Tỉnh Lai Châu", "Tỉnh Điện Biên",
@@ -22,42 +23,62 @@ const CreateEvent = ({ isOpen, onClose }) => {
         address: '',
         startTime: '',
         endTime: '',
+        endTime: '',
         scale: ''
     });
+    const [loading, setLoading] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         // Validate
         if (!formData.title || !formData.description || !formData.address || !formData.startTime || !formData.endTime || !formData.scale) {
             Swal.fire("Thiếu thông tin", "Vui lòng điền đầy đủ các trường!", "warning");
             return;
         }
 
-        // Logic here: Call API to create event
-        console.log("Create Event Data:", formData);
+        setLoading(true);
+        try {
+            const eventPayload = {
+                title: formData.title,
+                description: formData.description,
+                location: formData.province,
+                address: formData.address,
+                startTime: formData.startTime,
+                endTime: formData.endTime,
+                maxParticipants: parseInt(formData.scale),
+                coverImageUrl: "https://res.cloudinary.com/dfftcie7c/image/upload/w_1200,q_auto,f_auto/v1766202863/Screenshot_2025-12-20_103843_weczaf.png"
+            };
 
-        Swal.fire({
-            icon: 'success',
-            title: 'Tạo sự kiện thành công!',
-            text: 'Sự kiện của bạn đang chờ Admin duyệt.',
-            confirmButtonColor: '#16a34a' // Green-600
-        });
+            await createEvent(eventPayload);
 
-        // Reset and close
-        setFormData({
-            title: '',
-            description: '',
-            province: 'Hà Nội',
-            address: '',
-            startTime: '',
-            endTime: '',
-            scale: ''
-        });
-        onClose();
+            Swal.fire({
+                icon: 'success',
+                title: 'Tạo sự kiện thành công!',
+                text: 'Sự kiện của bạn đang chờ Admin duyệt.',
+                confirmButtonColor: '#16a34a' // Green-600
+            });
+
+            // Reset and close
+            setFormData({
+                title: '',
+                description: '',
+                province: 'Hà Nội',
+                address: '',
+                startTime: '',
+                endTime: '',
+                scale: ''
+            });
+            onClose();
+        } catch (error) {
+            console.error(error);
+            Swal.fire("Lỗi", "Không thể tạo sự kiện. Vui lòng thử lại.", "error");
+        } finally {
+            setLoading(false);
+        }
     };
 
     if (!isOpen) return null;
@@ -193,9 +214,11 @@ const CreateEvent = ({ isOpen, onClose }) => {
                     </button>
                     <button
                         onClick={handleSubmit}
-                        className="bg-green-600 text-white px-8 py-2 rounded-lg font-bold shadow-lg hover:bg-green-700 transition transform hover:scale-105"
+                        className={`bg-green-600 text-white px-8 py-2 rounded-lg font-bold shadow-lg hover:bg-green-700 transition transform hover:scale-105 flex items-center gap-2 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        disabled={loading}
                     >
-                        Tạo sự kiện
+                        {loading && <FaSpinner className="animate-spin" />}
+                        {loading ? 'Đang tạo...' : 'Tạo sự kiện'}
                     </button>
                 </div>
             </div>

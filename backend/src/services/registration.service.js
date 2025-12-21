@@ -215,15 +215,15 @@ export const RegistrationService = {
         throw err;
       }
 
-      // 5. Kiểm tra hủy trước 24h
+      // 5. Kiểm tra hủy trước 24h (Chỉ áp dụng với đã duyệt)
       const now = new Date();
       const timeDiff = event.startTime - now;
       const hoursDiff = timeDiff / (1000 * 60 * 60);
 
-      if (hoursDiff < 24) {
+      if (registration.status === 'APPROVED' && hoursDiff < 24) {
         const err = new Error('CANCELLATION_TOO_LATE');
         err.status = 400;
-        err.details = 'Chỉ có thể hủy đăng ký trước 24 giờ sự kiện bắt đầu';
+        err.details = 'Đối với sự kiện đã được duyệt, chỉ có thể hủy đăng ký trước 24 giờ sự kiện bắt đầu';
         throw err;
       }
 

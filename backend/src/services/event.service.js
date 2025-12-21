@@ -232,11 +232,7 @@ export const EventService = {
 
   // CRUD OPERATIONS
   async createEvent(eventData, organizerId, organizerName, organizerEmail) {
-    let session;
     try {
-      session = await mongoose.startSession();
-      session.startTransaction();
-
       // Set organizer info from authenticated user
       const newEvent = {
         ...eventData,
@@ -246,36 +242,33 @@ export const EventService = {
       };
 
       // Create event
-      const event = await Event.create([newEvent], { session });
+      const event = await Event.create([newEvent]);
       const createdEvent = event[0];
 
-      // Auto-register organizer as APPROVED
-      // Need to import Registration model. Since we are in EventService, we can use mongoose.model to avoid circular dependency if needed, 
-      // but importing at top is better if possible. 
-      // Assuming Registration model is available.
-      const Registration = mongoose.model('Registration');
+      try {
+        // Auto-register organizer as APPROVED
+        // Use the imported Registration model if available, or fetch it
+        const Registration = mongoose.model('Registration');
 
-      await Registration.create([{
-        eventId: createdEvent._id,
-        volunteerId: organizerId,
-        volunteerName: organizerName || 'Organizer',
-        volunteerEmail: organizerEmail || 'organizer@volunteerhub.com', // Use passed email
-        status: 'APPROVED',
-        approvedBy: organizerId, // Self-approved
-        registeredAt: new Date()
-      }], { session });
+        await Registration.create([{
+          eventId: createdEvent._id,
+          volunteerId: organizerId,
+          volunteerName: organizerName || 'Organizer',
+          volunteerEmail: organizerEmail || 'organizer@volunteerhub.com', // Use passed email
+          status: 'APPROVED',
+          approvedBy: organizerId, // Self-approved
+          registeredAt: new Date()
+        }]);
 
-      await session.commitTransaction();
-      session.endSession();
+      } catch (regError) {
+        // If registration fails, delete the created event to maintain consistency
+        await Event.findByIdAndDelete(createdEvent._id);
+        throw regError;
+      }
 
       // Return created event as plain object
       return createdEvent.toObject();
     } catch (error) {
-      if (session) {
-        await session.abortTransaction();
-        session.endSession();
-      }
-
       if (error.name === 'ValidationError') {
         const err = new Error('VALIDATION_ERROR');
         err.status = 400;

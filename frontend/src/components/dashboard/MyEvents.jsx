@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaTimesCircle, FaHistory, FaCalendarCheck, FaMapMarkerAlt, FaCalendarAlt } from "react-icons/fa";
-import { getMyRegistrations } from '../../api/registrationApi';
+import { getMyRegistrations, cancelRegistration } from '../../api/registrationApi';
+import Swal from 'sweetalert2';
 
 const MyEvents = ({ isOpen, onClose }) => {
     const [activeTab, setActiveTab] = useState('UPCOMING'); // 'UPCOMING' | 'PAST'
@@ -72,6 +73,31 @@ const MyEvents = ({ isOpen, onClose }) => {
     const handleEventClick = (eventId) => {
         onClose();
         navigate(`/group/${eventId}`);
+    };
+
+    const handleCancelRegistration = async (e, eventId, title) => {
+        e.stopPropagation(); // Prevent ensuring parent click (navigate)
+        try {
+            const result = await Swal.fire({
+                title: 'Hủy đăng ký?',
+                text: `Bạn có chắc muốn hủy đăng ký tham gia "${title}"?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Hủy đăng ký',
+                cancelButtonText: 'Đóng'
+            });
+
+            if (result.isConfirmed) {
+                await cancelRegistration(eventId);
+                Swal.fire("Đã hủy", `Đã hủy đăng ký sự kiện ${title}`, "success");
+                // Refresh list
+                fetchRegistrations();
+            }
+        } catch (error) {
+            Swal.fire("Lỗi", "Không thể hủy đăng ký. Có thể đã quá hạn hủy.", "error");
+        }
     };
 
     const getStatusBadge = (status) => {
@@ -145,6 +171,14 @@ const MyEvents = ({ isOpen, onClose }) => {
                                 <span className={`inline-block px-2 py-1 rounded text-[10px] font-bold ${getStatusBadge(event.status)}`}>
                                     {getStatusText(event.status)}
                                 </span>
+                                {event.status === 'PENDING' && (
+                                    <button
+                                        onClick={(e) => handleCancelRegistration(e, event.id, event.title)}
+                                        className="inline-block ml-2 px-2 py-1 bg-red-100 text-red-700 rounded text-[10px] font-bold hover:bg-red-200 transition"
+                                    >
+                                        Hủy
+                                    </button>
+                                )}
                             </div>
                         ))
                     ) : (
@@ -161,7 +195,7 @@ const MyEvents = ({ isOpen, onClose }) => {
                     </button>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

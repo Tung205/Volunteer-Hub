@@ -33,6 +33,32 @@ export const getManagedEvents = async (managerId, limit = 50) => {
     }
 };
 
+export const getPendingManagedEvents = async (managerId) => {
+    try {
+        const response = await api.get('api/events', {
+            params: {
+                organizerId: managerId,
+                status: 'PENDING',
+                limit: 50
+            }
+        });
+        return response.data.events;
+    } catch (error) {
+        console.error("Error fetching pending managed events:", error);
+        return [];
+    }
+};
+
+export const createEvent = async (eventData) => {
+    try {
+        const response = await api.post('api/events', eventData);
+        return response.data.event;
+    } catch (error) {
+        console.error("Error creating event:", error);
+        throw error;
+    }
+};
+
 export const getEventById = async (id) => {
     try {
         const response = await api.get(`api/events/${id}`);

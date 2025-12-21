@@ -11,6 +11,17 @@ export const getMyRegistrations = async () => {
     }
 };
 
+// Cancel registration
+export const cancelRegistration = async (eventId) => {
+    try {
+        const response = await api.delete(`api/registrations/${eventId}/register`);
+        return response.data;
+    } catch (error) {
+        console.error("Error cancelling registration:", error);
+        throw error;
+    }
+};
+
 // Manager: Get all pending registrations for my events
 export const getPendingRegistrations = async () => {
     try {
