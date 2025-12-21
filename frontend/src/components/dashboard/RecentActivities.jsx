@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FaCheckCircle, FaTimesCircle, FaInfoCircle } from "react-icons/fa";
 import { NOTIFICATIONS } from '../../data/mockData';
 
-const RecentActivities = ({ currentUserRole }) => {
+const RecentActivities = ({ currentUserRole, userHistory = [] }) => {
     const [filterActivity, setFilterActivity] = useState('today'); // 'today' | 'all'
 
     const formatTime = (timestamp) => {
@@ -19,18 +19,26 @@ const RecentActivities = ({ currentUserRole }) => {
         }
     };
 
-    // Filter Notification theo Role và Thời gian
-    const filteredNotifications = NOTIFICATIONS
-        .filter(n => n.role === currentUserRole || n.role === 'ALL')
+    // Filter Notification
+    const filteredNotifications = userHistory
         .filter(n => formatTime(n.time) !== null) // Loại bỏ nếu ko thuộc "Hôm nay" khi đang filter
-        .sort((a, b) => b.time - a.time);
+        .sort((a, b) => new Date(b.time) - new Date(a.time));
 
     const getIcon = (type) => {
-        switch (type) {
-            case 'success': return <FaCheckCircle className="text-green-500 text-xl" />;
-            case 'error': return <FaTimesCircle className="text-red-500 text-xl" />;
-            default: return <FaInfoCircle className="text-green-500 text-xl" />;
-        }
+        // Typically history doesn't have type, defaulting to Info. Or infer from text?
+        // Let's infer simplisticly or just use Info/Check.
+        // If text contains "thành công", "chấp nhận" -> success.
+        // If "từ chối", "hủy" -> error.
+        const text = type?.toLowerCase() || ''; // type here is actually 'text' in history object if we passed it, but map below uses n.text
+        return <FaInfoCircle className="text-green-500 text-xl" />;
+    };
+
+    // Helper to guess icon based on content
+    const guessIcon = (text) => {
+        const lower = text.toLowerCase();
+        if (lower.includes('thành công') || lower.includes('chấp nhận') || lower.includes('duyệt')) return <FaCheckCircle className="text-green-500 text-xl" />;
+        if (lower.includes('từ chối') || lower.includes('hủy') || lower.includes('thất bại')) return <FaTimesCircle className="text-red-500 text-xl" />;
+        return <FaInfoCircle className="text-blue-500 text-xl" />;
     };
 
     return (
@@ -51,17 +59,17 @@ const RecentActivities = ({ currentUserRole }) => {
 
             <div className="space-y-6">
                 {filteredNotifications.length > 0 ? (
-                    filteredNotifications.map((notif) => (
-                        <div key={notif.id} className="flex items-start justify-between group">
+                    filteredNotifications.map((notif, index) => (
+                        <div key={index} className="flex items-start justify-between group">
                             <div className="flex items-start gap-4">
                                 {/* Icon */}
                                 <div className="mt-1 flex-shrink-0 bg-gray-50 p-1 rounded-full">
-                                    {getIcon(notif.type)}
+                                    {guessIcon(notif.text)}
                                 </div>
 
                                 {/* Content */}
                                 <p className="text-gray-700 text-sm md:text-base leading-relaxed">
-                                    {notif.content}
+                                    {notif.text}
                                 </p>
                             </div>
 
