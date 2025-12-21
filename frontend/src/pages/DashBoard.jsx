@@ -57,7 +57,7 @@ const DashBoard = () => {
 
     return (
         <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans">
-            <div className="max-w-7xl mx-auto space-y-8">
+            <div className="w-full px-4 md:px-6 space-y-8">
                 {/* Main Content Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch min-h-[1050px]">
 
