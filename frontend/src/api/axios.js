@@ -28,7 +28,12 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response && error.response.status === 401) {
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      !error.config.url.includes('/auth/login') &&
+      !window.location.pathname.startsWith('/login')
+    ) {
       // Token is invalid or expired
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');
