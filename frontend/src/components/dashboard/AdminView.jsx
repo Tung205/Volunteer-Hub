@@ -1,19 +1,105 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaCloudDownloadAlt, FaClock, FaUserCog, FaTimesCircle } from "react-icons/fa";
 import Swal from 'sweetalert2';
 import UserManagement from './UserManagement';
 import InfoEvent from '../event/InfoEvent';
-import { MOCK_PENDING_DATA } from '../../data/mockData';
+import { getAllUsers } from '../../api/userApi';
+import { getAllEventsForExport, getPendingEvents } from '../../api/eventApi';
+import { exportMergedToCSV, exportToJSON } from '../../utils/exportUtils';
+import api from '../../api/axios';
 
 const AdminView = () => {
-    const [adminPendingList, setAdminPendingList] = useState(MOCK_PENDING_DATA.ADMIN);
+    const [adminPendingList, setAdminPendingList] = useState({ EVENTS: [], UPGRADES: [] });
     const [showUserModal, setShowUserModal] = useState(false);
     const [showPendingListModal, setShowPendingListModal] = useState(false);
     const [selectedPendingEvent, setSelectedPendingEvent] = useState(null);
-    const [adminPendingListTab, setAdminTab] = useState('EVENTS'); // EVENTS | UPGRADES
+    const [adminPendingListTab, setAdminTab] = useState('EVENTS');
+
+    useEffect(() => {
+        if (showPendingListModal) {
+            fetchPendingEvents();
+        }
+    }, [showPendingListModal]);
+
+    const fetchPendingEvents = async () => {
+        try {
+            const { events } = await getPendingEvents();
+            // Upgrades are not implemented in backend yet, so empty list
+            setAdminPendingList({ EVENTS: events || [], UPGRADES: [] });
+        } catch (error) {
+            console.error("Error fetching pending:", error);
+        }
+    };
 
     const getPendingCount = () => {
         return adminPendingList.EVENTS.length + adminPendingList.UPGRADES.length;
+    };
+
+    const handleExport = async () => {
+        // Step 1: Choose Format
+        const { value: format } = await Swal.fire({
+            title: 'Chọn định dạng xuất',
+            text: 'Sẽ xuất cả danh sách Người dùng và Sự kiện',
+            input: 'radio',
+            inputOptions: {
+                'csv': 'CSV (Excel)',
+                'json': 'JSON'
+            },
+            inputValue: 'csv',
+            showCancelButton: true,
+            confirmButtonText: 'Tải xuống',
+            cancelButtonText: 'Hủy'
+        });
+
+        if (!format) return;
+
+        // Show Loading
+        Swal.fire({
+            title: 'Đang tải dữ liệu...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        try {
+            // Execute Export - Fetch BOTH
+            const [users, events] = await Promise.all([
+                getAllUsers(),
+                getAllEventsForExport()
+            ]);
+
+            console.log("Export Data - Users:", users);
+            console.log("Export Data - Events:", events);
+
+            const filename = 'volunteer_hub_full_data';
+
+            if (format === 'csv') {
+                exportMergedToCSV(users, events, filename);
+            } else {
+                // Merge for JSON
+                const mergedData = {
+                    users: users,
+                    events: events
+                };
+                exportToJSON(mergedData, filename);
+            }
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Đã xuất dữ liệu!',
+                text: `Đã tải xuống file ${filename}.${format}`,
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } catch (error) {
+            console.error("Export Error:", error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi xuất dữ liệu',
+                text: 'Không thể tải dữ liệu từ server.'
+            });
+        }
     };
 
     const handleOpenReview = (event) => {
@@ -29,15 +115,20 @@ const AdminView = () => {
             showCancelButton: true,
             confirmButtonText: 'Duyệt ngay',
             cancelButtonText: 'Hủy'
-        }).then((result) => {
+        }).then(async (result) => {
             if (result.isConfirmed) {
-                // TODO: API Call
-                setAdminPendingList(prev => ({
-                    ...prev,
-                    EVENTS: prev.EVENTS.filter(e => e.id !== selectedPendingEvent.id)
-                }));
-                setSelectedPendingEvent(null);
-                Swal.fire('Đã duyệt!', 'Sự kiện đã được công khai.', 'success');
+                try {
+                    await api.patch(`/api/events/${selectedPendingEvent._id}/approve`);
+
+                    setAdminPendingList(prev => ({
+                        ...prev,
+                        EVENTS: prev.EVENTS.filter(e => e._id !== selectedPendingEvent._id)
+                    }));
+                    setSelectedPendingEvent(null);
+                    Swal.fire('Đã duyệt!', 'Sự kiện đã được công khai.', 'success');
+                } catch (error) {
+                    Swal.fire('Lỗi', error.response?.data?.error || 'Không thể duyệt sự kiện', 'error');
+                }
             }
         });
     };
@@ -52,15 +143,21 @@ const AdminView = () => {
             confirmButtonText: 'Từ chối',
             confirmButtonColor: '#d33',
             cancelButtonText: 'Hủy'
-        }).then((result) => {
+        }).then(async (result) => {
             if (result.isConfirmed) {
-                // TODO: API Call
-                setAdminPendingList(prev => ({
-                    ...prev,
-                    EVENTS: prev.EVENTS.filter(e => e.id !== selectedPendingEvent.id)
-                }));
-                setSelectedPendingEvent(null);
-                Swal.fire('Đã từ chối!', 'Sự kiện đã bị loại bỏ.', 'info');
+                try {
+                    const reason = result.value;
+                    await api.patch(`/api/events/${selectedPendingEvent._id}/reject`, { reason });
+
+                    setAdminPendingList(prev => ({
+                        ...prev,
+                        EVENTS: prev.EVENTS.filter(e => e._id !== selectedPendingEvent._id)
+                    }));
+                    setSelectedPendingEvent(null);
+                    Swal.fire('Đã từ chối!', 'Sự kiện đã bị loại bỏ.', 'info');
+                } catch (error) {
+                    Swal.fire('Lỗi', error.response?.data?.error || 'Không thể từ chối sự kiện', 'error');
+                }
             }
         });
     };
@@ -71,7 +168,7 @@ const AdminView = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 {/* Card 1: Export */}
                 <div
-                    onClick={() => console.log("Export Data API Call")}
+                    onClick={handleExport}
                     className="bg-green-200 rounded-[20px] p-6 flex flex-col items-center justify-center shadow-sm cursor-pointer hover:bg-green-100 transition relative overflow-hidden"
                 >
                     <div className="bg-green-500 p-3 rounded-full absolute top-4 left-4 shadow-sm text-white">
@@ -160,14 +257,14 @@ const AdminView = () => {
                                 <div className="space-y-2">
                                     {adminPendingList.EVENTS.length > 0 ? adminPendingList.EVENTS.map(evt => (
                                         <div
-                                            key={evt.id}
+                                            key={evt._id}
                                             onClick={() => handleOpenReview(evt)}
                                             className="bg-white p-4 rounded-lg border border-gray-100 hover:border-green-500 cursor-pointer transition flex justify-between items-center group shadow-sm"
                                         >
                                             <div>
                                                 <span className="font-bold text-gray-800 block text-lg">{evt.title}</span>
                                                 <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                                                    <span>Bởi: <span className="font-medium text-gray-700">{evt.organizerName}</span></span>
+                                                    <span>Bởi: <span className="font-medium text-gray-700">{evt.organizerId?.name || evt.organizerName}</span></span>
                                                     <span>•</span>
                                                     <span>{evt.date || 'TBD'}</span>
                                                 </div>
