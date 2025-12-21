@@ -2,23 +2,46 @@ import React, { useState, useEffect } from 'react';
 import { FaCalculator, FaClock, FaUserCog, FaTimesCircle } from "react-icons/fa";
 import UpdateRole from './UpdateRole';
 import MyEvents from './MyEvents';
+import { getMyManagerRequest, createManagerRequest } from '../../api/managerRequestApi';
 import { getMyRegistrations } from '../../api/registrationApi';
+import Swal from 'sweetalert2';
 
 const VolunteerView = ({ roleName }) => { // roleName = 'TNV' or 'VOLUNTEER'
     const [registrations, setRegistrations] = useState([]);
+    const [upgradeRequest, setUpgradeRequest] = useState(null);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [showMyEventsModal, setShowMyEventsModal] = useState(false);
     const [showPendingListModal, setShowPendingListModal] = useState(false);
 
     useEffect(() => {
-        const fetchRegistrations = async () => {
-            const data = await getMyRegistrations();
-            setRegistrations(data);
+        const fetchData = async () => {
+            const [regData, reqData] = await Promise.all([
+                getMyRegistrations(),
+                getMyManagerRequest()
+            ]);
+            console.log("Registrations loaded:", regData); // Debug log
+            setRegistrations(regData || []);
+            setUpgradeRequest(reqData);
         };
-        fetchRegistrations();
+        fetchData();
     }, []);
 
-    const joinedCount = registrations.filter(r => r.status === 'APPROVED' || r.status === 'COMPLETED').length;
+    const handleUpgradeSubmit = async (reason) => {
+        try {
+            await createManagerRequest(reason);
+            const reqData = await getMyManagerRequest();
+            setUpgradeRequest(reqData);
+            setShowUpgradeModal(false);
+            Swal.fire('Thành công', 'Yêu cầu của bạn đã được gửi và đang chờ duyệt.', 'success');
+        } catch (error) {
+            Swal.fire('Lỗi', 'Không thể gửi yêu cầu.', 'error');
+        }
+    };
+
+    // Update count logic: Include PENDING, APPROVED, COMPLETED (basically everything except REJECTED/CANCELLED?)
+    // Or just all registrations? The user said "Tham gia 3 sự kiện" for pending ones. 
+    // Let's count everything that is NOT Cancelled/Rejected.
+    const joinedCount = registrations.filter(r => ['PENDING', 'APPROVED', 'COMPLETED'].includes(r.status)).length;
     const pendingList = registrations.filter(r => r.status === 'PENDING');
 
 
@@ -58,7 +81,13 @@ const VolunteerView = ({ roleName }) => { // roleName = 'TNV' or 'VOLUNTEER'
 
                 {/* Card 3: Upgrade Role */}
                 <div
-                    onClick={() => setShowUpgradeModal(true)}
+                    onClick={() => {
+                        if (upgradeRequest && upgradeRequest.status === 'PENDING') {
+                            Swal.fire('Đã gửi yêu cầu', 'Yêu cầu nâng cấp của bạn đang chờ Admin duyệt.', 'info');
+                        } else {
+                            setShowUpgradeModal(true);
+                        }
+                    }}
                     className="bg-green-200 rounded-[20px] p-6 flex flex-col items-center justify-center shadow-sm relative overflow-hidden cursor-pointer hover:bg-green-100 transition"
                 >
                     <div className="bg-green-500 p-3 rounded-full absolute top-4 left-4 shadow-sm text-white">
@@ -68,13 +97,22 @@ const VolunteerView = ({ roleName }) => { // roleName = 'TNV' or 'VOLUNTEER'
                         <span className="bg-gray-100 text-green-800 text-lg font-bold px-4 py-1 rounded-full shadow-sm block mb-2">
                             {roleName}
                         </span>
-                        <p className="font-bold text-gray-800 text-sm">Vai trò</p>
+                        {upgradeRequest && upgradeRequest.status === 'PENDING' ? (
+                            <span className="inline-block px-2 py-0.5 bg-yellow-400 text-black text-xs font-bold rounded-full mb-1">Đang chờ duyệt</span>
+                        ) : (
+                            <p className="font-bold text-gray-800 text-sm">Nâng cấp Manager</p>
+                        )}
+
                     </div>
                 </div>
             </div>
 
             {/* Modals */}
-            <UpdateRole isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+            <UpdateRole
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
+                onSubmit={handleUpgradeSubmit}
+            />
             <MyEvents isOpen={showMyEventsModal} onClose={() => setShowMyEventsModal(false)} />
 
             {/* Pending List Modal */}

@@ -1,4 +1,6 @@
 import { ManagerRequest } from '../models/manager-request.model.js';
+import { User } from '../models/user.model.js';
+import { UserService } from './user.service.js';
 
 export const ManagerRequestService = {
   /**
@@ -8,6 +10,10 @@ export const ManagerRequestService = {
    * @returns {Promise<Object>} - Yêu cầu vừa được tạo
    */
   async createManagerRequest(volunteerId, reason) {
+    console.log("ManagerRequestService.createManagerRequest called");
+    console.log("VolunteerID:", volunteerId);
+    console.log("Reason:", reason);
+
     try {
       const request = new ManagerRequest({
         volunteerId,
@@ -66,6 +72,25 @@ export const ManagerRequestService = {
       request.adminId = adminId;
       await request.save();
 
+      // Nếu duyệt, cập nhật role cho user
+      if (status === 'APPROVED') {
+        await User.findByIdAndUpdate(request.volunteerId, {
+          $addToSet: { roles: 'MANAGER' }
+        });
+
+        // Ghi lịch sử cho user
+        await UserService.pushHistory(
+          request.volunteerId,
+          `Yêu cầu nâng cấp lên MANAGER của bạn đã được chấp nhận!`
+        );
+      } else if (status === 'REJECTED') {
+        // Ghi lịch sử cho user
+        await UserService.pushHistory(
+          request.volunteerId,
+          `Yêu cầu nâng cấp lên MANAGER của bạn đã bị từ chối. Lý do: ${rejectionReason || 'Không có'}`
+        );
+      }
+
       return request;
     } catch (error) {
       console.error('[ManagerRequestService] Error updating request status:', error);
@@ -82,5 +107,20 @@ export const ManagerRequestService = {
    */
   async rejectManagerRequest(requestId, adminId, rejectionReason) {
     return this.updateRequestStatus(requestId, 'REJECTED', adminId, rejectionReason);
+  },
+
+  /**
+   * Lấy tất cả yêu cầu đang chờ duyệt (cho Admin)
+   * @returns {Promise<Array>}
+   */
+  async getAllPendingRequests() {
+    try {
+      return await ManagerRequest.find({ status: 'PENDING' })
+        .populate('volunteerId', 'name email avatar') // Populate info người dùng
+        .sort({ createdAt: 1 });
+    } catch (error) {
+      console.error('[ManagerRequestService] Error fetching pending requests:', error);
+      throw error;
+    }
   },
 };

@@ -34,4 +34,19 @@ router.patch(
   ManagerRequestController.rejectManagerRequest
 );
 
+// GET /api/manager-requests/pending - Admin lấy danh sách chờ duyệt
+router.get(
+  '/pending',
+  isAuthenticated,
+  hasRole('ADMIN'),
+  ManagerRequestController.getPendingRequests
+);
+
+// GET /api/manager-requests/my-requests - Volunteer xem lịch sử yêu cầu
+router.get(
+  '/my-requests',
+  isAuthenticated,
+  ManagerRequestController.getMyRequests
+);
+
 export default router;

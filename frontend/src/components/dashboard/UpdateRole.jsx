@@ -2,25 +2,20 @@ import React, { useState } from 'react';
 import { FaUserCog, FaTimesCircle } from "react-icons/fa";
 import Swal from 'sweetalert2';
 
-const UpdateRole = ({ isOpen, onClose }) => {
+const UpdateRole = ({ isOpen, onClose, onSubmit }) => {
     const [upgradeReason, setUpgradeReason] = useState("");
     const [isSubmitted, setIsSubmitted] = useState(false);
 
-    const handleSendUpgradeRequest = () => {
+    const handleSendUpgradeRequest = async () => {
         if (!upgradeReason.trim()) {
             Swal.fire("Lỗi", "Vui lòng nhập lý do!", "warning");
             return;
         }
 
-        // --- TODO: BACKEND INTEGRATION FLOW ---
-        // 1. Prepare Payload: userId, currentRole, requestedRole='MANAGER', reason, timestamp
-        // 2. Call API: api.post('/api/users/upgrade-request', payload)
-        // 3. Notify Admin
-
-        console.log("Upgrade Request:", upgradeReason);
-        Swal.fire("Đã gửi", "Yêu cầu nâng cấp tài khoản đang được Admin xem xét.", "success");
-        setIsSubmitted(true);
-        // onClose(); // Keep open to show state change
+        if (onSubmit) {
+            await onSubmit(upgradeReason);
+            setIsSubmitted(true);
+        }
     };
 
     if (!isOpen) return null;

@@ -5,6 +5,7 @@ import UserManagement from './UserManagement';
 import InfoEvent from '../event/InfoEvent';
 import { getAllUsers } from '../../api/userApi';
 import { getAllEventsForExport, getPendingEvents, approveEvent, rejectEvent } from '../../api/eventApi';
+import { getPendingManagerRequests, approveManagerRequest, rejectManagerRequest } from '../../api/managerRequestApi';
 import { exportMergedToCSV, exportToJSON } from '../../utils/exportUtils';
 import api from '../../api/axios';
 
@@ -23,12 +24,79 @@ const AdminView = () => {
 
     const fetchPendingEvents = async () => {
         try {
-            const { events } = await getPendingEvents();
-            // Upgrades are not implemented in backend yet, so empty list
-            setAdminPendingList({ EVENTS: events || [], UPGRADES: [] });
+            const [eventsData, upgradesData] = await Promise.all([
+                getPendingEvents(),
+                getPendingManagerRequests()
+            ]);
+
+            // Map upgrades data to UI format if needed, or stick to backend format.
+            // UI expects: { id, userName, reason, date }
+            // Backend returns: { _id, volunteerId: { name }, reason, createdAt }
+            const formattedUpgrades = (upgradesData || []).map(req => ({
+                id: req._id,
+                userName: req.volunteerId?.name || 'Unknown',
+                reason: req.reason,
+                date: new Date(req.createdAt).toLocaleDateString('vi-VN'),
+                raw: req
+            }));
+
+            setAdminPendingList({
+                EVENTS: eventsData.events || [],
+                UPGRADES: formattedUpgrades
+            });
         } catch (error) {
             console.error("Error fetching pending:", error);
         }
+    };
+
+    // ... existing event handlers ...
+
+    const handleApproveUpgrade = (reqId, userName) => {
+        Swal.fire({
+            title: 'Duyệt nâng cấp?',
+            text: `Xác nhận nâng cấp tài khoản cho ${userName}?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Đồng ý',
+            cancelButtonText: 'Hủy'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await approveManagerRequest(reqId);
+                    setAdminPendingList(prev => ({
+                        ...prev,
+                        UPGRADES: prev.UPGRADES.filter(i => i.id !== reqId)
+                    }));
+                    Swal.fire("Đã duyệt", `Đã nâng cấp quyền cho ${userName}`, "success");
+                } catch (error) {
+                    Swal.fire('Lỗi', 'Không thể duyệt yêu cầu', 'error');
+                }
+            }
+        });
+    };
+
+    const handleRejectUpgrade = (reqId, userName) => {
+        Swal.fire({
+            title: 'Từ chối yêu cầu?',
+            input: 'text',
+            inputPlaceholder: 'Lý do từ chối...',
+            showCancelButton: true,
+            confirmButtonText: 'Từ chối',
+            confirmButtonColor: '#d33'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await rejectManagerRequest(reqId, result.value);
+                    setAdminPendingList(prev => ({
+                        ...prev,
+                        UPGRADES: prev.UPGRADES.filter(i => i.id !== reqId)
+                    }));
+                    Swal.fire("Đã từ chối", `Đã từ chối yêu cầu của ${userName}`, "info");
+                } catch (error) {
+                    Swal.fire('Lỗi', 'Không thể từ chối yêu cầu', 'error');
+                }
+            }
+        });
     };
 
     const getPendingCount = () => {
@@ -296,19 +364,13 @@ const AdminView = () => {
                                             </div>
                                             <div className="flex justify-end gap-3">
                                                 <button
-                                                    onClick={() => {
-                                                        Swal.fire("Đã từ chối", `Đã từ chối yêu cầu của ${req.userName}`, "info");
-                                                        setAdminPendingList(prev => ({ ...prev, UPGRADES: prev.UPGRADES.filter(i => i.id !== req.id) }));
-                                                    }}
+                                                    onClick={() => handleRejectUpgrade(req.id, req.userName)}
                                                     className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium text-sm transition"
                                                 >
                                                     Từ chối
                                                 </button>
                                                 <button
-                                                    onClick={() => {
-                                                        Swal.fire("Đã duyệt", `Đã nâng cấp quyền cho ${req.userName}`, "success");
-                                                        setAdminPendingList(prev => ({ ...prev, UPGRADES: prev.UPGRADES.filter(i => i.id !== req.id) }));
-                                                    }}
+                                                    onClick={() => handleApproveUpgrade(req.id, req.userName)}
                                                     className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition shadow-sm"
                                                 >
                                                     Chấp nhận
