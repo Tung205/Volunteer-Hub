@@ -9,7 +9,6 @@ import RecentActivities from '../components/dashboard/RecentActivities';
 
 // --- MAIN COMPONENT ---
 const DashBoard = () => {
-    console.log("DASHBOARD LAYOUT UPDATED v2 - PLEASE CHECK CONSOLE");
     const navigate = useNavigate();
     const [currentUserRole, setCurrentUserRole] = useState('TNV'); // 'TNV' | 'MANAGER' | 'ADMIN'
     const [userName, setUserName] = useState("Nguyễn Văn A");
@@ -80,42 +79,6 @@ const DashBoard = () => {
                 </div>
             </div>
 
-            {/* DEV TOOL: Role Switcher */}
-            <div className="fixed bottom-4 right-4 z-[9999] bg-white p-3 rounded-lg shadow-2xl border-2 border-indigo-500 transform transition hover:scale-105 group opacity-50 hover:opacity-100">
-                <p className="text-[10px] uppercase font-black text-indigo-500 mb-2 text-center tracking-wider">Debug: Change Role</p>
-                <div className="flex gap-2">
-                    {['TNV', 'MANAGER', 'ADMIN'].map(role => (
-                        <button
-                            key={role}
-                            onClick={() => {
-                                setCurrentUserRole(role);
-                                // Update localStorage to persist
-                                try {
-                                    const stored = JSON.parse(localStorage.getItem('user') || '{}');
-                                    stored.role = role;
-                                    localStorage.setItem('user', JSON.stringify(stored));
-                                } catch (e) { }
-
-                                Swal.fire({
-                                    toast: true,
-                                    position: 'bottom-start',
-                                    icon: 'info',
-                                    title: `Role: ${role}`,
-                                    showConfirmButton: false,
-                                    timer: 1000,
-                                    width: '200px'
-                                });
-                            }}
-                            className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${currentUserRole === role
-                                ? 'bg-indigo-600 text-white shadow-md'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                }`}
-                        >
-                            {role}
-                        </button>
-                    ))}
-                </div>
-            </div>
         </div>
     );
 };
