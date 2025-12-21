@@ -105,6 +105,35 @@ export const EventController = {
     }
   },
 
+  // POST /api/events/:id/closed - Đóng sự kiện (MANAGER only, owner)
+  async closeEvent(req, res) {
+    try {
+      const eventId = req.params.id;
+      const userId = req.user.id;
+      const event = await EventService.closeEventById(eventId, userId);
+      return res.status(200).json({ event });
+    } catch (e) {
+      if (e.status) return res.status(e.status).json({ error: e.message, details: e.details });
+      console.error(e);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
+  },
+
+  // POST /api/events/:id/cancelled - Hủy sự kiện (MANAGER only, owner, chỉ OPENED)
+  async cancelEvent(req, res) {
+    try {
+      const eventId = req.params.id;
+      const userId = req.user.id;
+      const event = await EventService.cancelEventById(eventId, userId);
+      return res.status(200).json({ event });
+    } catch (e) {
+      if (e.status) return res.status(e.status).json({ error: e.message, details: e.details });
+      console.error(e);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
+  },
+
+
   // ==================== APPROVAL WORKFLOW ====================
 
   // PATCH /api/events/:id/submit - MANAGER submit event để ADMIN duyệt

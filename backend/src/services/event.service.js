@@ -82,8 +82,17 @@ export const EventService = {
     const query = this.buildFilterQuery(filters);
     const sortOptions = this.buildSortOptions(sort);
     
-    // Calculate pagination
-    const skip = (page - 1) * limit;
+    // Count total first to validate page
+    const total = await Event.countDocuments(query);
+    const totalPages = Math.ceil(total / limit);
+    
+    // Auto-redirect: If page exceeds totalPages, redirect to last valid page
+    const requestedPage = page;
+    const actualPage = totalPages > 0 ? Math.min(page, totalPages) : 1;
+    const wasRedirected = requestedPage !== actualPage;
+    
+    // Calculate pagination with actual page
+    const skip = (actualPage - 1) * limit;
     
     // Build query
     let queryBuilder = Event.find(query)
@@ -97,21 +106,23 @@ export const EventService = {
       queryBuilder = queryBuilder.populate('organizerId', 'name email');
     }
     
-    // Execute query and count in parallel for better performance
-    const [events, total] = await Promise.all([
-      queryBuilder.exec(),
-      Event.countDocuments(query)
-    ]);
+    // Execute query
+    const events = await queryBuilder.exec();
     
     return {
       events,
       pagination: {
-        page,
+        page: actualPage,
         limit,
         total,
-        totalPages: Math.ceil(total / limit),
-        hasNext: page < Math.ceil(total / limit),
-        hasPrev: page > 1
+        totalPages,
+        hasNext: actualPage < totalPages,
+        hasPrev: actualPage > 1,
+        // Thông tin redirect để frontend biết
+        ...(wasRedirected && { 
+          requestedPage,
+          redirected: true 
+        })
       }
     };
   },
@@ -301,11 +312,28 @@ export const EventService = {
         }
       }
       
+      // Rule 5: MANAGER chỉ được sửa 1 lần sau khi event được duyệt
+      if (currentEvent.status === 'OPENED' && currentEvent.editCount >= 1) {
+        const err = new Error('EDIT_LIMIT_EXCEEDED');
+        err.status = 400;
+        err.details = 'Sự kiện đã được sửa 1 lần. Không thể sửa thêm.';
+        throw err;
+      }
+      
+      // Rule 6: Nếu MANAGER sửa event đã OPENED → chuyển về PENDING để admin duyệt lại
+      if (currentEvent.status === 'OPENED' && !updateData.status) {
+        updateData.status = 'PENDING';
+        // Clear approval info khi cần duyệt lại
+        updateData.approvedBy = null;
+        updateData.approvedAt = null;
+      }
+      
       // 3. Update trong database
       const updatedEvent = await Event.findByIdAndUpdate(
         eventId,
         { 
-          $set: updateData
+          $set: updateData,
+          $inc: { editCount: 1 }  // Tăng số lần sửa
         },
         { 
           new: true,  // Return document sau khi update
@@ -339,6 +367,67 @@ export const EventService = {
       
       throw error;
     }
+  },
+
+  /**
+   * Đóng sự kiện (status -> CLOSED), chỉ cho MANAGER là owner
+   * @param {string} eventId
+   * @param {string} userId
+   * @returns {Promise<Event>}
+   */
+  async closeEventById(eventId, userId) {
+    const event = await Event.findById(eventId);
+    if (!event) {
+      const err = new Error('EVENT_NOT_FOUND');
+      err.status = 404;
+      throw err;
+    }
+    // Chỉ cho MANAGER là owner
+    if (event.organizerId.toString() !== userId) {
+      const err = new Error('FORBIDDEN');
+      err.status = 403;
+      throw err;
+    }
+    // Nếu đã closed thì không làm gì
+    if (event.status === 'CLOSED') {
+      return event;
+    }
+    event.status = 'CLOSED';
+    event.updatedAt = new Date();
+    await event.save();
+    return event;
+  },
+
+  /**
+   * Hủy sự kiện (status -> CANCELLED), chỉ cho MANAGER là owner, chỉ OPENED mới được hủy
+   * @param {string} eventId
+   * @param {string} userId
+   * @returns {Promise<Event>}
+   */
+  async cancelEventById(eventId, userId) {
+    const event = await Event.findById(eventId);
+    if (!event) {
+      const err = new Error('EVENT_NOT_FOUND');
+      err.status = 404;
+      throw err;
+    }
+    // Chỉ cho MANAGER là owner
+    if (event.organizerId.toString() !== userId) {
+      const err = new Error('FORBIDDEN');
+      err.status = 403;
+      throw err;
+    }
+    // Chỉ OPENED mới được hủy
+    if (event.status !== 'OPENED') {
+      const err = new Error('INVALID_STATUS_TRANSITION');
+      err.status = 400;
+      err.details = `Chỉ sự kiện đang OPENED mới được hủy. Hiện tại: ${event.status}`;
+      throw err;
+    }
+    event.status = 'CANCELLED';
+    event.updatedAt = new Date();
+    await event.save();
+    return event;
   },
 
   // ==================== APPROVAL WORKFLOW ====================

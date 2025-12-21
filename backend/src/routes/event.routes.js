@@ -22,13 +22,28 @@ router.post('/',
   EventController.createEvent
 );
 
-router.put('/:id',
+router.patch('/:id',
   isAuthenticated,
   hasRole('MANAGER', 'ADMIN'),
   canModifyEvent,
   validate(eventIdParamSchema, 'params'),
   validate(updateEventSchema),
   EventController.updateEvent
+);
+
+router.post('/:id/closed',
+  isAuthenticated,
+  hasRole('MANAGER'),
+  validate(eventIdParamSchema, 'params'),
+  EventController.closeEvent
+);
+
+// MANAGER: Hủy sự kiện (OPENED → CANCELLED)
+router.post('/:id/cancelled',
+  isAuthenticated,
+  hasRole('MANAGER'),
+  validate(eventIdParamSchema, 'params'),
+  EventController.cancelEvent
 );
 
 // ==================== APPROVAL WORKFLOW ====================
