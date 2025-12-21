@@ -17,3 +17,11 @@ export const updateManagerRequestSchema = Joi.object({
     'string.max': 'Lý do từ chối không được vượt quá 500 ký tự'
   })
 });
+
+export const rejectManagerRequestSchema = Joi.object({
+  rejectionReason: Joi.string().required().trim().max(255).messages({
+    'string.max': 'Lý do từ chối không được vượt quá 255 ký tự',
+    'string.empty': 'Lý do từ chối không được để trống',
+    'any.required': 'Lý do từ chối là bắt buộc'
+  })
+});

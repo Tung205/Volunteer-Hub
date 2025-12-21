@@ -72,4 +72,15 @@ export const ManagerRequestService = {
       throw error;
     }
   },
+
+  /**
+   * Từ chối yêu cầu trở thành Manager
+   * @param {string} requestId - ID của yêu cầu
+   * @param {string} adminId - ID của Admin thực hiện từ chối
+   * @param {string} rejectionReason - Lý do từ chối
+   * @returns {Promise<Object>} - Yêu cầu đã được cập nhật
+   */
+  async rejectManagerRequest(requestId, adminId, rejectionReason) {
+    return this.updateRequestStatus(requestId, 'REJECTED', adminId, rejectionReason);
+  },
 };
