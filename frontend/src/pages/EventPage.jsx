@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import { IoSearch } from "react-icons/io5";
-import InfoEvent from "../components/InfoEvent";
-import EventCard from "../components/EventCard";
+import InfoEvent from "../components/event/InfoEvent";
+import EventCard from "../components/event/EventCard";
 import bannerImage from "../assets/introDashboard.png";
 import api from "../api/axios";
 

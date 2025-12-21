@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FaCalculator, FaClock, FaUserCog, FaTimesCircle } from "react-icons/fa";
-import UpdateRole from '../UpdateRole';
-import MyEvents from '../MyEvents';
+import UpdateRole from './UpdateRole';
+import MyEvents from './MyEvents';
 import { MOCK_PENDING_DATA } from '../../data/mockData';
 
 const VolunteerView = ({ roleName }) => { // roleName = 'TNV' or 'VOLUNTEER'

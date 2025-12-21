@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { FaCloudDownloadAlt, FaClock, FaUserCog, FaTimesCircle } from "react-icons/fa";
 import Swal from 'sweetalert2';
-import UserManagement from '../UserManagement';
-import InfoEvent from '../InfoEvent';
+import UserManagement from './UserManagement';
+import InfoEvent from '../event/InfoEvent';
 import { MOCK_PENDING_DATA } from '../../data/mockData';
 
 const AdminView = () => {

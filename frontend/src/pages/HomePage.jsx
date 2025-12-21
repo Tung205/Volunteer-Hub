@@ -6,7 +6,7 @@ import { HiOutlineCalendar, HiUserGroup } from 'react-icons/hi';
 
 // Components
 import AnimatedScroll from "../components/AnimatedScroll.jsx";
-import InfoEvent from '../components/InfoEvent';
+import InfoEvent from '../components/event/InfoEvent';
 
 import introDashboard_1 from '../assets/introDashboard.png';
 import userStory1 from '../assets/userStory1.png';

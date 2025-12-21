@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'; // <--- 1. SỬA LỖI: Thêm useState, useEffect
 import { Link, useNavigate, NavLink } from 'react-router-dom';
-import logo from '../assets/logoApp.png';
+import logo from "../../assets/logoApp.png";
 
 import { IoLogOutOutline } from "react-icons/io5";
 import { FaUserCircle } from "react-icons/fa";
 
-import Logout from './Logout';
-import UserProfile from './UserProfile';
+import Logout from '../profile/Logout';
+import UserProfile from '../profile/UserProfile';
 
 const Header = () => {
 

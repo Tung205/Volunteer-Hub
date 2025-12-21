@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { FaCalculator, FaClock, FaUserCog, FaTimesCircle } from "react-icons/fa";
 import Swal from 'sweetalert2';
-import CreateEvent from '../CreateEvent';
-import MyEvents from '../MyEvents';
+import CreateEvent from './CreateEvent';
+import MyEvents from './MyEvents';
 import { MOCK_PENDING_DATA } from '../../data/mockData';
 
 const ManagerView = () => {

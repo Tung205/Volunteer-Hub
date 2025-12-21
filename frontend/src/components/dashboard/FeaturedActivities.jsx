@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FaChevronDown } from "react-icons/fa";
-import EventCard from '../EventCard';
-import InfoEvent from '../InfoEvent';
+import EventCard from '../event/EventCard';
+import InfoEvent from '../event/InfoEvent';
 import { getFeaturedEvents, getEventById } from '../../api/eventApi';
 
 const FeaturedActivities = () => {
