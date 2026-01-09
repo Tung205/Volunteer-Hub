@@ -10,9 +10,14 @@ export const ChannelController = {
       const { cid } = req.params;
       const { page, limit } = req.query;
 
+      const userId = req.user?.id; // Optional auth if public? But usually auth.
+      // Assuming route is authenticated or optional.
+      // Routes file says `isAuthenticated` is likely.
+
       const result = await ChannelService.getPostsByChannel(cid, {
         page: parseInt(page) || 1,
-        limit: parseInt(limit) || 10
+        limit: parseInt(limit) || 10,
+        userId
       });
 
       return res.json(result);

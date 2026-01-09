@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Channel from '../models/channel.model.js';
 import Post from '../models/post.model.js';
 import Comment from '../models/comment.model.js';
+import Like from '../models/like.model.js';
 import { UserService } from './user.service.js';
 
 export const ChannelService = {
@@ -52,7 +53,7 @@ export const ChannelService = {
    * @param {Object} options - { page, limit }
    * @returns {Promise<Object>} - { posts, pagination }
    */
-  async getPostsByChannel(channelId, { page = 1, limit = 10 }) {
+  async getPostsByChannel(channelId, { page = 1, limit = 10, userId }) {
     // Ensure limit không vượt quá 50
     const safeLimit = Math.min(limit, 50);
     const skip = (page - 1) * safeLimit;
@@ -69,8 +70,25 @@ export const ChannelService = {
 
     const totalPages = Math.ceil(total / safeLimit);
 
+    // Check likes if userId provided
+    let likedPostIds = new Set();
+    if (userId) {
+      const likes = await Like.find({
+        targetId: { $in: posts.map(p => p._id) },
+        targetType: 'Post',
+        userId: userId
+      }).lean();
+      likedPostIds = new Set(likes.map(l => l.targetId.toString()));
+    }
+
+    const postsWithLikeStatus = posts.map(post => ({
+      ...post,
+      isLiked: likedPostIds.has(post._id.toString()),
+      likes: likedPostIds.has(post._id.toString()) ? [userId] : [] // Hack for frontend array check
+    }));
+
     return {
-      posts,
+      posts: postsWithLikeStatus,
       pagination: {
         page,
         limit: safeLimit,
@@ -162,16 +180,6 @@ export const ChannelService = {
    * Lấy danh sách người đã like bài viết
    */
   async getLikers(postId) {
-    // Import Like model inside method or top level (if not circular)
-    // Assuming Like model is needed.
-    // import Like from '../models/like.model.js'; // Top level better.
-    // Since I can't easily add import top level without reading file, I'll rely on dynamic import or assume it's there?
-    // Wait, ChannelService didn't import Like model at top.
-
-    // I will use mongoose.model('Like') as a safe fallback if not imported, 
-    // or just assume I can add it? I'll use mongoose.model for safety.
-    const Like = mongoose.model('Like');
-
     const likes = await Like.find({ targetId: postId, targetType: 'Post' })
       .populate('userId', 'name email avatar') // populate user info
       .lean();

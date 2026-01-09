@@ -27,9 +27,20 @@ function urlBase64ToUint8Array(base64String) {
     return outputArray;
 }
 
+// Helper to determine highest role precedence
+const determineRole = (roles) => {
+    if (!roles) return 'TNV';
+    // Handle both array and single string legacy cases
+    const roleList = Array.isArray(roles) ? roles : [roles];
+
+    if (roleList.includes('ADMIN')) return 'ADMIN';
+    if (roleList.includes('MANAGER')) return 'MANAGER';
+    return 'TNV';
+};
+
 // --- MAIN COMPONENT ---
 const DashBoard = () => {
-    console.log("DASHBOARD LAYOUT UPDATED v2 - PLEASE CHECK CONSOLE");
+    // console.log("DASHBOARD LAYOUT UPDATED v2");
     const navigate = useNavigate();
     const [currentUserRole, setCurrentUserRole] = useState('TNV'); // 'TNV' | 'MANAGER' | 'ADMIN'
     const [userName, setUserName] = useState("Nguyễn Văn A");
@@ -39,11 +50,15 @@ const DashBoard = () => {
     useEffect(() => {
         const fetchUserProfile = async () => {
             const storedUser = localStorage.getItem('user');
+            let initialRole = 'TNV';
+
             if (storedUser) {
                 try {
                     const userObj = JSON.parse(storedUser);
-                    setUserName(userObj.fullName || "User");
-                    if (userObj.role) setCurrentUserRole(userObj.role);
+                    setUserName(userObj.fullName || userObj.name || "User");
+                    // Apply strict precedence: ADMIN > MANAGER > VOLUNTEER
+                    initialRole = determineRole(userObj.roles || userObj.role);
+                    setCurrentUserRole(initialRole);
                 } catch (e) {
                     console.error("Error parsing user data", e);
                 }
@@ -54,7 +69,10 @@ const DashBoard = () => {
             if (profile) {
                 setUserName(profile.name);
                 setUserHistory(profile.history || []);
-                // Optional: Sync role if needed, but sticky role might be preferred for testing
+                // Update role from fresh profile data to ensure accuracy
+                if (profile.roles) {
+                    setCurrentUserRole(determineRole(profile.roles));
+                }
             }
         };
         fetchUserProfile();
@@ -79,8 +97,6 @@ const DashBoard = () => {
                         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
                     });
 
-                    console.log("Push Subscription:", subscription);
-
                     // Send to backend
                     await api.post('/api/subscriptions', subscription);
                 }
@@ -89,7 +105,7 @@ const DashBoard = () => {
             }
         };
 
-        // Only subscribe if user is logged in (we check storedUser, but api call will use token)
+        // Only subscribe if user is logged in
         if (localStorage.getItem('user')) {
             subscribeToPush();
         }
@@ -145,43 +161,6 @@ const DashBoard = () => {
                             className="h-full flex-1"
                         />
                     </div>
-                </div>
-            </div>
-
-            {/* DEV TOOL: Role Switcher */}
-            <div className="fixed bottom-4 right-4 z-[9999] bg-white p-3 rounded-lg shadow-2xl border-2 border-indigo-500 transform transition hover:scale-105 group opacity-50 hover:opacity-100">
-                <p className="text-[10px] uppercase font-black text-indigo-500 mb-2 text-center tracking-wider">Debug: Change Role</p>
-                <div className="flex gap-2">
-                    {['TNV', 'MANAGER', 'ADMIN'].map(role => (
-                        <button
-                            key={role}
-                            onClick={() => {
-                                setCurrentUserRole(role);
-                                // Update localStorage to persist
-                                try {
-                                    const stored = JSON.parse(localStorage.getItem('user') || '{}');
-                                    stored.role = role;
-                                    localStorage.setItem('user', JSON.stringify(stored));
-                                } catch (e) { }
-
-                                Swal.fire({
-                                    toast: true,
-                                    position: 'bottom-start',
-                                    icon: 'info',
-                                    title: `Role: ${role}`,
-                                    showConfirmButton: false,
-                                    timer: 1000,
-                                    width: '200px'
-                                });
-                            }}
-                            className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${currentUserRole === role
-                                ? 'bg-indigo-600 text-white shadow-md'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                }`}
-                        >
-                            {role}
-                        </button>
-                    ))}
                 </div>
             </div>
         </div>

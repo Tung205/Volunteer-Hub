@@ -81,4 +81,11 @@ router.get(
   getRegistrationStatus
 );
 
+router.get(
+  "/:eventId/attendees",
+  validate(eventIdParamSchema, "params"),
+  optionalAuth, // Allow guests to see who joined? Or restrict? Let's allow public for now or auth only if needed. User prompt implies seeing it.
+  RegistrationController.getApprovedRegistrations
+);
+
 export default router;

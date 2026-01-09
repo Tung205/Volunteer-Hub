@@ -41,7 +41,7 @@ const VolunteerView = ({ roleName }) => { // roleName = 'TNV' or 'VOLUNTEER'
     // Update count logic: Include PENDING, APPROVED, COMPLETED (basically everything except REJECTED/CANCELLED?)
     // Or just all registrations? The user said "Tham gia 3 sự kiện" for pending ones. 
     // Let's count everything that is NOT Cancelled/Rejected.
-    const joinedCount = registrations.filter(r => ['PENDING', 'APPROVED', 'COMPLETED'].includes(r.status)).length;
+    const joinedCount = registrations.filter(r => ['APPROVED', 'COMPLETED'].includes(r.status)).length;
     const pendingList = registrations.filter(r => r.status === 'PENDING');
 
 
@@ -59,7 +59,7 @@ const VolunteerView = ({ roleName }) => { // roleName = 'TNV' or 'VOLUNTEER'
                     </div>
                     <div className="mt-8 text-center">
                         <span className="text-4xl font-black text-green-800 block mb-1">{joinedCount}</span>
-                        <p className="font-bold text-gray-800 text-sm">Sự kiện tham gia</p>
+                        <p className="font-bold text-gray-800 text-sm">Lịch sử hoạt động</p>
                     </div>
                 </div>
 
@@ -75,7 +75,7 @@ const VolunteerView = ({ roleName }) => { // roleName = 'TNV' or 'VOLUNTEER'
                         <span className="text-4xl font-black text-green-800 block mb-1">
                             {pendingList.length}
                         </span>
-                        <p className="font-bold text-gray-800 text-sm">Chờ duyệt</p>
+                        <p className="font-bold text-gray-800 text-sm">Sự kiện chờ duyệt</p>
                     </div>
                 </div>
 

@@ -43,19 +43,47 @@ const MyEvents = ({ isOpen, onClose }) => {
         if (!event) return false;
 
         const now = new Date();
-        const startTime = new Date(event.startTime);
         const endTime = new Date(event.endTime);
         const isCompleted = reg.status === 'COMPLETED' || reg.status === 'ATTENDED';
         const isApproved = reg.status === 'APPROVED';
+        const isRejected = reg.status === 'REJECTED';
+        const isHost = reg.isHost === true;
 
         if (activeTab === 'UPCOMING') {
-            // Hiển thị nếu đã duyệt VÀ (chưa diễn ra hoặc đang diễn ra)
+            // TAB ĐANG/SẮP THAM GIA:
+            // 1. Sự kiện mình làm HOST (luôn hiện, trừ khi đã qua thời gian thì sang past? User yêu cầu: "Hiện những sự kiện Manager làm host")
+            // Update: "những sự kiện bị từ chối hay hết hạn thì cho vào [Đã tham gia]"
+            // Vậy HOST cũng phải check time.
+
+            if (isHost) {
+                // Host events: Show if future/ongoing. If rejected/expired -> Past tab.
+                // Wait, if event is REJECTED (by Admin), it should be in Past?
+                // "những sự kiện bị từ chối hay hết hạn thì cho vào [Đã tham gia]" -> Applies to Host events too.
+                const isEventRejected = event.status === 'REJECTED';
+                if (isEventRejected) return false;
+                if (endTime < now) return false;
+                return true;
+            }
+
+            // 2. Sự kiện đăng ký (APPROVED only, no PENDING)
+            // "những sự kiện nào đang chờ duyệt thì không hiện" -> PENDING removed.
             return isApproved && endTime >= now;
+
         } else {
-            // Hiển thị nếu đã hoàn thành HOẶC (đã duyệt nhưng đã qua thời gian)
-            return isCompleted || (isApproved && endTime < now) || reg.status === 'REJECTED';
-            // Note: REJECTED might not belong in "Participated", but "History" might include it. 
-            // For now let's show Approved Past and Completed.
+            // TAB ĐÃ THAM GIA:
+            // 1. REJECTED registrations
+            if (isRejected) return true;
+
+            // 2. COMPLETED/ATTENDED or Expired APPROVED/HOST
+            if (isCompleted) return true;
+
+            // 3. Expired events (Host or Approved)
+            if ((isApproved || isHost) && endTime < now) return true;
+
+            // 4. Host events that are REJECTED (by Admin)
+            if (isHost && event.status === 'REJECTED') return true;
+
+            return false;
         }
     }).map(reg => {
         // Map to display format
@@ -66,7 +94,8 @@ const MyEvents = ({ isOpen, onClose }) => {
             location: event.location,
             date: new Date(event.startTime).toLocaleDateString('vi-VN'),
             status: reg.status,
-            coverImageUrl: event.coverImageUrl
+            coverImageUrl: event.coverImageUrl,
+            isHost: reg.isHost
         };
     });
 
@@ -163,7 +192,16 @@ const MyEvents = ({ isOpen, onClose }) => {
                                 onClick={() => handleEventClick(event.id)}
                                 className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer hover:border-green-300"
                             >
-                                <h4 className="font-bold text-green-700 text-base mb-1">{event.title}</h4>
+                                <div className="flex justify-between items-start mb-1">
+                                    <h4 className="font-bold text-green-700 text-base flex-1">
+                                        {event.isHost && (
+                                            <span className="inline-block px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[10px] rounded mr-2 align-middle border border-purple-200">
+                                                HOST
+                                            </span>
+                                        )}
+                                        {event.title}
+                                    </h4>
+                                </div>
                                 <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
                                     <span className="flex items-center gap-1"><FaMapMarkerAlt /> {event.location}</span>
                                     <span className="flex items-center gap-1"><FaCalendarAlt /> {event.date}</span>

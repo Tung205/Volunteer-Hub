@@ -54,10 +54,6 @@ const HomePage = () => {
                 const events = await getFeaturedEvents('members', 3);
                 if (events && events.length > 0) {
                     setFeaturedEvents(events);
-                } else {
-                    // Fallback to dummy if no events
-                    // setFeaturedEvents(dummyEvents); 
-                    // Or simply leave empty
                 }
             } catch (error) {
                 console.error("Failed to load featured events", error);

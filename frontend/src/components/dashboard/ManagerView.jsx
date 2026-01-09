@@ -48,7 +48,7 @@ const ManagerView = () => {
                 ...prev,
                 MANAGING: pendingRegs.map(reg => ({
                     id: reg._id,
-                    userName: reg.volunteerName || reg.volunteerId?.name || 'Unknown',
+                    userName: reg.volunteerName || reg.volunteerId?.name || reg.volunteerId?.email || 'Unknown',
                     eventTitle: reg.eventTitle || 'Unknown Event', // Service populates this
                     date: new Date(reg.registeredAt).toLocaleDateString(),
                     ...reg
@@ -101,14 +101,39 @@ const ManagerView = () => {
 
     const handleReject = async (regId, userName) => {
         try {
-            await rejectRegistration(regId);
-            Swal.fire("Đã từ chối", `Đã từ chối ${userName}`, "info");
-            setManagerPendingList(prev => ({
-                ...prev,
-                MANAGING: prev.MANAGING.filter(i => i.id !== regId)
-            }));
+            const { value: reason } = await Swal.fire({
+                title: 'Từ chối yêu cầu?',
+                input: 'textarea',
+                inputLabel: `Lý do từ chối ${userName}`,
+                inputPlaceholder: 'Nhập lý do (tối thiểu 5 ký tự)...',
+                inputAttributes: {
+                    'aria-label': 'Nhập lý do từ chối'
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Xác nhận từ chối',
+                cancelButtonText: 'Hủy',
+                confirmButtonColor: '#d33',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Bạn cần viết lý do từ chối!';
+                    }
+                    if (value.length < 5) {
+                        return 'Lý do phải có ít nhất 5 ký tự.';
+                    }
+                }
+            });
+
+            if (reason) {
+                await rejectRegistration(regId, reason);
+                Swal.fire("Đã từ chối", `Đã từ chối ${userName}`, "info");
+                setManagerPendingList(prev => ({
+                    ...prev,
+                    MANAGING: prev.MANAGING.filter(i => i.id !== regId)
+                }));
+            }
         } catch (error) {
-            Swal.fire("Lỗi", "Không thể từ chối yêu cầu", "error");
+            console.error("Reject error", error);
+            Swal.fire("Lỗi", error.response?.data?.details?.[0] || "Không thể từ chối yêu cầu", "error");
         }
     };
 
@@ -152,7 +177,7 @@ const ManagerView = () => {
                     </div>
                     <div className="mt-8 text-center">
                         <span className="text-4xl font-black text-green-800 block mb-1">{managedEventsCount}</span>
-                        <p className="font-bold text-gray-800 text-sm">Sự kiện đã tạo</p>
+                        <p className="font-bold text-gray-800 text-sm">Lịch sử hoạt động</p>
                     </div>
                 </div>
 
@@ -191,19 +216,6 @@ const ManagerView = () => {
 
             {/* Modals */}
             <CreateEvent isOpen={showCreateEvent} onClose={() => setShowCreateEvent(false)} />
-            {/* Note: MyEvents needs to handle "Manager Mode" to show created events, or just show joined events based on intention.
-                Usually "My Events" means joined. "Managed Events" is different.
-                However, for this task, I'll leave MyEvents as is (Joined) since Manager can also join.
-                If user wanted to see "Created Events", that's a different list.
-                But the card says "Sự kiện tham gia" (Joined) in original code BUT I changed label to "Sự kiện đã tạo" based on context.
-                Wait, card 1 original label: "Sự kiện tham gia" (Joined).
-                My change: "Sự kiện đã tạo" (Created).
-                I should probably stick to one or enable both.
-                Let's stick to "Sự kiện đã tạo" (Created) for Manager Dashboard as it makes more sense for a manager view.
-                But `MyEvents.jsx` displays Joined events.
-                I will leave `MyEvents` as is for now, maybe Manager wants to see joined events too.
-                But the count `managedEventsCount` reflects CREATED events.
-            */}
             <MyEvents isOpen={showMyEventsModal} onClose={() => setShowMyEventsModal(false)} />
 
             {/* Pending List Modal */}
@@ -234,7 +246,7 @@ const ManagerView = () => {
                                 className={`pb-3 px-4 font-semibold text-sm transition relative ${managerTab === 'OTHER' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 <div className="flex items-center gap-2">
-                                    <FaUserCog /> Sự kiện chờ duyệt
+                                    <FaUserCog /> Quản lý yêu cầu
                                     <span className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full">{managerPendingList.OTHER.length}</span>
                                 </div>
                                 {managerTab === 'OTHER' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>}

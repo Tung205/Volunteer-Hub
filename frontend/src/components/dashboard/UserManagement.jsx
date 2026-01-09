@@ -4,17 +4,16 @@ import Swal from 'sweetalert2';
 
 const MOCK_USERS = [
     // 3 Managers
-    { id: 1, name: 'Nguyễn Văn A', email: 'manager1@example.com', role: 'manager', status: 'active' },
-    { id: 2, name: 'Trần Thị B', email: 'manager2@example.com', role: 'manager', status: 'active' },
-    { id: 3, name: 'Lê Văn C', email: 'manager3@example.com', role: 'manager', status: 'locked' },
+    { id: 1, name: 'Nguyễn Đức Toàn', email: 'toan@gmail.com', role: 'manager', status: 'active' },
+    { id: 2, name: 'Nguyễn Thanh Tùng', email: 'tung@gmail.com', role: 'manager', status: 'active' },
     // 7 Volunteers
-    { id: 4, name: 'Phạm Thị D', email: 'vol1@example.com', role: 'volunteer', status: 'active' },
-    { id: 5, name: 'Hoàng Văn E', email: 'vol2@example.com', role: 'volunteer', status: 'active' },
-    { id: 6, name: 'Vũ Thị F', email: 'vol3@example.com', role: 'volunteer', status: 'active' },
-    { id: 7, name: 'Đặng Văn G', email: 'vol4@example.com', role: 'volunteer', status: 'locked' },
-    { id: 8, name: 'Bùi Thị H', email: 'vol5@example.com', role: 'volunteer', status: 'active' },
-    { id: 9, name: 'Đỗ Văn I', email: 'vol6@example.com', role: 'volunteer', status: 'active' },
-    { id: 10, name: 'Ngô Thị K', email: 'vol7@example.com', role: 'volunteer', status: 'active' },
+    { id: 4, name: 'Võ Hoàng Long', email: 'long@gmail.com', role: 'volunteer', status: 'active' },
+    { id: 5, name: 'Trần Minh Anh', email: 'anh@gmail.com', role: 'admin', status: 'active' },
+    { id: 6, name: 'Vũ Thị Hường', email: 'huong@gmail.com', role: 'volunteer', status: 'active' },
+    { id: 7, name: 'Đặng Văn Linh', email: 'linh@gmail.com', role: 'volunteer', status: 'locked' },
+    { id: 8, name: 'Bùi Thị Hạnh', email: 'hanh@gmail.com', role: 'volunteer', status: 'active' },
+    { id: 9, name: 'Đỗ Văn Sáng', email: 'sang@gmail.com', role: 'volunteer', status: 'active' },
+    { id: 10, name: 'Ngô Thị Nga', email: 'nga@gmail.com', role: 'volunteer', status: 'active' },
 ];
 
 const UserManagement = ({ isOpen, onClose }) => {

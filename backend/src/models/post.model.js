@@ -36,8 +36,12 @@ const PostSchema = new mongoose.Schema(
       trim: true,
     },
     attachments: [AttachmentSchema],
-    // likes ở đây là counter, dùng để hiển thị nhanh số lượng
-    likes: {
+    likesCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    commentsCount: {
       type: Number,
       default: 0,
       min: 0,

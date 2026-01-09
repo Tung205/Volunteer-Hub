@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout.jsx';
 import HomePage from './pages/HomePage.jsx';
@@ -7,8 +8,13 @@ import EventPage from "./pages/EventPage.jsx";
 import DashBoard from "./pages/DashBoard.jsx";
 import GroupPage from "./pages/GroupPage.jsx";
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import { registerServiceWorker } from './utils/push-notification';
 
 export default function App() {
+  useEffect(() => {
+    registerServiceWorker();
+  }, []);
+
   return (
     <Routes>
       <Route path='/' element={<MainLayout />}>

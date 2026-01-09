@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FaChevronDown } from "react-icons/fa";
+import Swal from 'sweetalert2';
 import EventCard from '../event/EventCard';
 import InfoEvent from '../event/InfoEvent';
 import { getFeaturedEvents, getEventById } from '../../api/eventApi';
+import { registerForEvent, getRegistrationStatus } from '../../api/registrationApi';
 
 const FeaturedActivities = () => {
     const [filterFeatured, setFilterFeatured] = useState('newest'); // 'newest' | 'posts' | 'members'
@@ -14,6 +17,8 @@ const FeaturedActivities = () => {
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [isInfoOpen, setIsInfoOpen] = useState(false);
     const [loadingDetails, setLoadingDetails] = useState(false);
+
+    const navigate = useNavigate();
 
     const dropdownRef = useRef(null);
 
@@ -66,7 +71,15 @@ const FeaturedActivities = () => {
         try {
             // Fetch full details
             const fullEvent = await getEventById(event._id);
-            setSelectedEvent(fullEvent);
+
+            // Check registration status if logged in
+            let status = null;
+            if (localStorage.getItem('token') || localStorage.getItem('accessToken') || localStorage.getItem('user')) {
+                const statusRaw = await getRegistrationStatus(event._id);
+                status = (statusRaw === 'NONE' || !statusRaw) ? null : statusRaw.toLowerCase();
+            }
+
+            setSelectedEvent({ ...fullEvent, userStatus: status });
             setIsInfoOpen(true);
         } catch (error) {
             console.error("Failed to load event details", error);
@@ -80,9 +93,68 @@ const FeaturedActivities = () => {
         setSelectedEvent(null);
     };
 
-    // Dummy handlers for registration/chat (can be connected later)
-    const handleRegister = () => {
-        alert("Chức năng đăng ký đang được phát triển!");
+    // Handle Registration
+    const handleRegister = async () => {
+        const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
+
+        if (!token) {
+            Swal.fire({
+                icon: "warning",
+                title: "Bạn chưa đăng nhập",
+                text: "Vui lòng đăng nhập để đăng ký sự kiện!",
+                showCancelButton: true,
+                confirmButtonText: "Đăng nhập ngay",
+                cancelButtonText: "Hủy",
+                confirmButtonColor: "#16a34a",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    navigate('/login');
+                }
+            });
+            return;
+        }
+
+        if (!selectedEvent?._id) return;
+
+        try {
+            Swal.fire({
+                title: "Đang đăng ký...",
+                didOpen: () => Swal.showLoading(),
+                allowOutsideClick: false,
+            });
+
+            const registration = await registerForEvent(selectedEvent._id);
+
+            // Update UI
+            const newStatus = (registration?.status || 'PENDING').toLowerCase();
+            setSelectedEvent(prev => ({ ...prev, userStatus: newStatus }));
+
+            Swal.fire("Thành công", "Đăng ký thành công! Vui lòng chờ duyệt.", "success");
+
+        } catch (error) {
+            console.error("Register error:", error);
+            const status = error?.response?.status;
+            const message = error?.response?.data?.message || "Đăng ký thất bại.";
+
+            if (status === 409) {
+                Swal.fire("Thông báo", "Bạn đã đăng ký sự kiện này rồi.", "info");
+                // Refresh status
+                const statusRaw = await getRegistrationStatus(selectedEvent._id);
+                const uiStatus = (statusRaw === 'NONE') ? null : statusRaw.toLowerCase();
+                setSelectedEvent(prev => ({ ...prev, userStatus: uiStatus }));
+            } else if (status === 403) {
+                Swal.fire("Lỗi", "Chỉ tình nguyện viên mới được đăng ký.", "error");
+            } else {
+                Swal.fire("Lỗi", message, "error");
+            }
+        }
+    };
+
+    // Navigate to Group Chat
+    const handleJoinChat = () => {
+        if (selectedEvent && selectedEvent._id) {
+            navigate(`/group/${selectedEvent._id}`);
+        }
     };
 
     return (
@@ -157,8 +229,9 @@ const FeaturedActivities = () => {
                 isOpen={isInfoOpen}
                 onClose={handleCloseModal}
                 event={selectedEvent || {}}
-                userStatus="guest" // Default for now
+                userStatus={selectedEvent?.userStatus || "guest"}
                 onRegister={handleRegister}
+                onJoinChat={handleJoinChat}
             />
         </div>
     );

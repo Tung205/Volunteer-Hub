@@ -119,6 +119,14 @@ export const RegistrationService = {
         userId,
         `Bạn đã gửi yêu cầu tham gia sự kiện "${eventTitle}"`,
       );
+
+      // Notify Manager
+      if (event.organizerId) {
+        sendNotificationToUser(event.organizerId, {
+          title: 'Đăng ký mới',
+          body: `${userInfo.name || 'Ai đó'} đã đăng ký tham gia sự kiện "${eventTitle}"`
+        }).catch(err => console.error("Notify Manager failed", err));
+      }
       return registration;
     } catch (error) {
       throw error;
@@ -138,13 +146,52 @@ export const RegistrationService = {
     const eventIds = events.map(e => e._id);
 
     // 2. Find PENDING registrations for these events
-    const registrations = await Registration.find({
+    // Fetch RAW first to ensure we don't lose IDs if populate fails
+    let registrations = await Registration.find({
       eventId: { $in: eventIds },
       status: 'PENDING'
     })
       .sort({ registeredAt: -1 })
-      .populate('volunteerId', 'name email avatar') // Populate user info
       .lean();
+
+    // Debug: Log raw registrations to verify we have IDs
+    try {
+      const fs = await import('fs');
+      const debugData = {
+        managerId,
+        regs: registrations
+      };
+      fs.writeFileSync('backend_debug_registrations.json', JSON.stringify(debugData, null, 2));
+    } catch (e) { console.error("Write debug error", e); }
+
+    // 3. Manually Populate Users
+    const { User } = await import('../models/user.model.js');
+
+    registrations = await Promise.all(registrations.map(async (reg) => {
+      const rawVolId = reg.volunteerId;
+
+      let user = null;
+      if (rawVolId) {
+        user = await User.findById(rawVolId).select('name email avatar').lean();
+      }
+
+      // Attach user info or a placeholder if missing
+      reg.volunteerId = user || null;
+
+      // Populate name fallback
+      if (!reg.volunteerName) {
+        if (user) {
+          reg.volunteerName = user.name || user.email;
+        } else {
+          reg.volunteerName = `Deleted User (${rawVolId})`;
+        }
+      }
+
+      // Last resort fallback for frontend
+      if (!reg.volunteerName) reg.volunteerName = "Unknown";
+
+      return reg;
+    }));
 
     // Map event title to registration for easier display
     const eventMap = events.reduce((acc, curr) => {
@@ -161,15 +208,57 @@ export const RegistrationService = {
   /**
    * TNV xem danh sách sự kiện mình đã đăng ký
    */
+  /**
+   * TNV xem danh sách sự kiện mình đã đăng ký
+   * (Update: Bao gồm cả sự kiện do chính mình tổ chức - Manager)
+   */
   async getMyRegistrations(userId) {
+    const { Event } = await import('../models/event.model.js');
+
+    // 1. Fetch regular registrations
     const registrations = await Registration.find({
       volunteerId: userId
     })
       .populate('eventId', 'title description location address startTime endTime status coverImageUrl maxParticipants currentParticipants')
-      .sort({ registeredAt: -1 }) // Mới nhất trước
+      .sort({ registeredAt: -1 })
       .lean();
 
-    return registrations;
+    // 2. Fetch events organized by this user
+    const organizedEvents = await Event.find({ organizerId: userId })
+      .select('title description location address startTime endTime status coverImageUrl maxParticipants currentParticipants')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const organizedEventIds = new Set(organizedEvents.map(e => e._id.toString()));
+
+    // 3. Mark existing registrations as HOST if applicable
+    registrations.forEach(reg => {
+      if (reg.eventId && organizedEventIds.has(reg.eventId._id.toString())) {
+        reg.isHost = true;
+      }
+    });
+
+    // 4. Find organized events that are NOT in registrations list (if any)
+    const registeredEventIds = new Set(registrations.map(r => r.eventId ? r.eventId._id.toString() : ''));
+
+    // Filter out events that user is already registered for
+    const missingOrganizedEvents = organizedEvents.filter(e => !registeredEventIds.has(e._id.toString()));
+
+    const missingOrganizedRegistrations = missingOrganizedEvents.map(event => ({
+      _id: `host-${event._id}`,
+      eventId: event,
+      volunteerId: userId,
+      status: 'APPROVED',
+      registeredAt: event.createdAt,
+      isHost: true
+    }));
+
+    // 5. Combine and Sort
+    const all = [...registrations, ...missingOrganizedRegistrations].sort((a, b) => {
+      return new Date(b.registeredAt) - new Date(a.registeredAt);
+    });
+
+    return all;
   },
 
   /**
@@ -352,6 +441,12 @@ export const RegistrationService = {
           volunteerId,
           `Bạn đã được duyệt tham gia sự kiện "${eventTitle}"`,
         );
+
+        // Notify Volunteer
+        sendNotificationToUser(volunteerId, {
+          title: 'Đăng ký được duyệt!',
+          body: `Bạn đã được chấp nhận tham gia sự kiện "${eventTitle}".`
+        }).catch(err => console.error("Notify Volunteer failed", err));
       }
       // Ghi lịch sử cho manager
       const manager = await UserService.getUserById(managerId);
@@ -411,6 +506,7 @@ export const RegistrationService = {
       const result = await Registration.findById(regId)
         .populate('volunteerId', 'name email')
         .populate('approvedBy', 'name email')
+        .populate('eventId', 'title')
         .lean();
 
 
@@ -422,6 +518,12 @@ export const RegistrationService = {
           volunteerId,
           `Yêu cầu tham gia sự kiện "${eventTitle}" của bạn đã bị từ chối`,
         );
+
+        // Notify Volunteer
+        sendNotificationToUser(volunteerId, {
+          title: 'Đăng ký bị từ chối',
+          body: `Yêu cầu tham gia sự kiện "${eventTitle}" của bạn không được chấp nhận.`
+        }).catch(err => console.error("Notify Volunteer failed", err));
       }
       // Ghi lịch sử cho manager
       const manager = await UserService.getUserById(managerId);
@@ -436,6 +538,21 @@ export const RegistrationService = {
     } catch (error) {
       throw error;
     }
+  },
+
+  /**
+   * Lấy danh sách thành viên đã được duyệt (APPROVED)
+   */
+  async getApprovedRegistrations(eventId) {
+    const registrations = await Registration.find({
+      eventId,
+      status: 'APPROVED'
+    })
+      .populate('volunteerId', 'name email avatar')
+      .sort({ registeredAt: -1 })
+      .lean();
+
+    return registrations;
   }
 };
 

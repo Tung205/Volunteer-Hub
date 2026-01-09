@@ -23,7 +23,6 @@ const CreateEvent = ({ isOpen, onClose }) => {
         address: '',
         startTime: '',
         endTime: '',
-        endTime: '',
         scale: ''
     });
     const [loading, setLoading] = useState(false);
@@ -75,7 +74,8 @@ const CreateEvent = ({ isOpen, onClose }) => {
             onClose();
         } catch (error) {
             console.error(error);
-            Swal.fire("Lỗi", "Không thể tạo sự kiện. Vui lòng thử lại.", "error");
+            const errorMsg = error.response?.data?.details || error.response?.data?.error || "Không thể tạo sự kiện. Vui lòng thử lại.";
+            Swal.fire("Lỗi", Array.isArray(errorMsg) ? errorMsg.join('\n') : errorMsg, "error");
         } finally {
             setLoading(false);
         }

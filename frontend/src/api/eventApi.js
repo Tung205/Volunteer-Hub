@@ -4,7 +4,7 @@ export const getFeaturedEvents = async (filterType = 'newest', limit = 6) => {
     try {
         let response;
         if (filterType === 'newest') {
-            response = await api.get('api/events', { params: { sort: 'newest', limit } });
+            response = await api.get('api/events', { params: { sort: 'newest', limit, status: 'OPENED' } });
             return response.data.events;
         } else if (filterType === 'members') {
             response = await api.get('api/events/highlighted', { params: { limit } });

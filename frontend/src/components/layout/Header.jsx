@@ -3,7 +3,7 @@ import { Link, useNavigate, NavLink } from 'react-router-dom';
 import logo from "../../assets/logoApp.png";
 
 import { IoLogOutOutline } from "react-icons/io5";
-import { FaUserCircle } from "react-icons/fa";
+import { FaUserCircle, FaBell } from "react-icons/fa";
 
 import Logout from '../profile/Logout';
 import UserProfile from '../profile/UserProfile';
@@ -134,9 +134,19 @@ const Header = () => {
                   </div>
                   <button
                     onClick={handleProfileClick}
-                    className="block px-4 py-2 text-gray-700 hover:bg-gray-50"
+                    className="block px-4 py-2 text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                   >
-                    Hồ sơ cá nhân
+                    <FaUserCircle className="text-gray-500" /> Hồ sơ cá nhân
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setShowDropdown(false);
+                      const { subscribeUserToPush } = await import('../../utils/push-notification');
+                      await subscribeUserToPush();
+                    }}
+                    className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <FaBell className="text-gray-500" /> Bật thông báo
                   </button>
                   <div className="border-t my-1"></div>
                   <button

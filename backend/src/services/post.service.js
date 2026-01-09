@@ -44,6 +44,9 @@ export const PostService = {
       `Bạn đã bình luận vào một bài viết${postTitle ? ': "' + postTitle + '..."' : ''}`
     );
 
+    // Increment commentsCount
+    await Post.findByIdAndUpdate(postId, { $inc: { commentsCount: 1 } });
+
     // Populate author info before returning
     const populatedComment = await Comment.findById(comment._id)
       .populate('authorId', 'name email avatar')
@@ -128,18 +131,27 @@ export const PostService = {
     }
 
     // Check xem đã like chưa
-    const existingLike = await Like.findOne({ postId, userId }).lean();
+    const existingLike = await Like.findOne({
+      targetId: postId,
+      targetType: 'Post',
+      userId
+    }).lean();
 
     if (existingLike) {
       // Đã like rồi → trả về success (idempotent)
       return {
         liked: true,
-        likes: post.likes
+        likes: post.likesCount
       };
     }
 
     // Tạo like record và tăng counter
-    await Like.create({ postId, userId });
+    await Like.create({
+      targetId: postId,
+      targetType: 'Post',
+      userId
+    });
+    console.log(`[DEBUG] likePost: Created Like for post=${postId} user=${userId}`);
 
     // Ghi lịch sử cho user
     const postTitle = post?.content ? post.content.slice(0, 30) : '';
@@ -150,13 +162,13 @@ export const PostService = {
 
     const updatedPost = await Post.findByIdAndUpdate(
       postId,
-      { $inc: { likes: 1 } },
+      { $inc: { likesCount: 1 } },
       { new: true }
     ).lean();
 
     return {
       liked: true,
-      likes: updatedPost.likes
+      likes: updatedPost.likesCount
     };
   },
 
@@ -184,9 +196,13 @@ export const PostService = {
     }
 
     // Xóa like record nếu có
-    const deleted = await Like.findOneAndDelete({ postId, userId });
+    const deleted = await Like.findOneAndDelete({
+      targetId: postId,
+      targetType: 'Post',
+      userId
+    });
 
-    // Nếu đã xóa được → giảm counter
+    // Nếu đã xóa được → update counter theo thực tế (self-healing)
     if (deleted) {
       // Ghi lịch sử cho user
       const postTitle = post?.content ? post.content.slice(0, 30) : '';
@@ -194,22 +210,30 @@ export const PostService = {
         userId,
         `Bạn đã bỏ thích một bài viết${postTitle ? ': "' + postTitle + '..."' : ''}`
       );
+
+      const realCount = await Like.countDocuments({ targetId: postId, targetType: 'Post' });
+
       const updatedPost = await Post.findByIdAndUpdate(
         postId,
-        { $inc: { likes: -1 } },
+        { likesCount: realCount },
         { new: true }
       ).lean();
 
       return {
         liked: false,
-        likes: updatedPost.likes
+        likes: updatedPost.likesCount
       };
     }
 
-    // Chưa like → trả về success (idempotent)
+    // Chưa like → trả về success & self-heal count
+    const realCount = await Like.countDocuments({ targetId: postId, targetType: 'Post' });
+    if (post.likesCount !== realCount) {
+      await Post.findByIdAndUpdate(postId, { likesCount: realCount });
+    }
+
     return {
       liked: false,
-      likes: post.likes
+      likes: realCount
     };
   }
 };

@@ -9,6 +9,47 @@ import PostDetail from '../components/group/PostDetail';
 import LikesList from '../components/group/LikesList';
 import { getEventById } from '../api/eventApi';
 import { getChannelByEvent, getChannelPosts, createPost, likePost, unlikePost, createComment } from '../api/channelApi';
+import { getEventAttendees } from '../api/registrationApi';
+
+const AttendeesModal = ({ attendees, onClose }) => {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col relative">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition z-10 p-1 bg-gray-100 rounded-full"
+        >
+          <X size={20} />
+        </button>
+        <div className="p-4 border-b">
+          <h3 className="text-lg font-bold text-gray-800">Thành viên tham gia ({attendees.length})</h3>
+        </div>
+        <div className="overflow-y-auto p-4 space-y-3 flex-1">
+          {attendees.length > 0 ? (
+            attendees.map((att) => {
+              const user = att.volunteerId || {};
+              return (
+                <div key={att._id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition">
+                  <img
+                    src={user.avatar || `https://ui-avatars.com/api/?name=${user.name || 'User'}`}
+                    alt={user.name}
+                    className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                  />
+                  <div>
+                    <p className="font-semibold text-gray-800 text-sm">{user.name || 'Unknown'}</p>
+                    <p className="text-xs text-gray-500">{user.email}</p>
+                  </div>
+                </div>
+              )
+            })
+          ) : (
+            <div className="text-center text-gray-500 py-6">Chưa có thành viên nào.</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const GroupPage = () => {
   const { eventId } = useParams();
@@ -22,6 +63,9 @@ const GroupPage = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newPostContent, setNewPostContent] = useState("");
+
+  const [attendees, setAttendees] = useState([]);
+  const [showAttendees, setShowAttendees] = useState(false);
 
   // Pagination for posts
   const [page, setPage] = useState(1);
@@ -50,6 +94,10 @@ const GroupPage = () => {
           setPosts(postsData.posts);
           setHasMore(postsData.pagination.hasNext);
         }
+
+        // 4. Get Attendees
+        const members = await getEventAttendees(eventId);
+        setAttendees(members);
 
       } catch (error) {
         console.error("Error fetching group data:", error);
@@ -107,7 +155,7 @@ const GroupPage = () => {
 
   const handleLike = async (post) => {
     // Optimistic UI update
-    const isLiked = post.likes && post.likes.includes(currentUser._id); // Backend should return array or we track it. 
+    const isLiked = typeof post.isLiked !== 'undefined' ? post.isLiked : (post.likes && post.likes.includes(currentUser._id));
     // Note: The backend logic for 'isLiked' might rely on populating likes or checking separately. 
     // Simplified: Backend API 'likePost' toggles or we might need separate 'unlike'. 
     // Looking at my backend code: `likePost` and `unlikePost` exist.
@@ -209,7 +257,12 @@ const GroupPage = () => {
             <p className="text-gray-500 mt-1 flex items-center gap-2 text-sm">
               <MapPin size={16} /> {event.location}
               <span className="mx-1">•</span>
-              <Users size={16} /> {event.currentParticipants || 0} thành viên
+              <button
+                onClick={() => setShowAttendees(true)}
+                className="flex items-center gap-1 hover:text-green-600 hover:underline transition"
+              >
+                <Users size={16} /> {attendees.length} thành viên
+              </button>
             </p>
 
             {/* Tabs */}
@@ -315,9 +368,11 @@ const GroupPage = () => {
                     <div className="flex gap-1">
                       <button
                         onClick={() => handleLike(post)}
-                        className={`flex-1 py-1.5 rounded flex justify-center items-center gap-2 text-sm font-semibold hover:bg-gray-50 transition text-gray-500`}
+                        className={`flex-1 py-1.5 rounded flex justify-center items-center gap-2 text-sm font-semibold hover:bg-gray-50 transition ${(typeof post.isLiked !== 'undefined' ? post.isLiked : (post.likes && post.likes.includes(currentUser._id)))
+                          ? 'text-red-500' : 'text-gray-500'
+                          }`}
                       >
-                        <Heart size={18} /> Thích
+                        <Heart size={18} className={(typeof post.isLiked !== 'undefined' ? post.isLiked : (post.likes && post.likes.includes(currentUser._id))) ? "fill-current" : ""} /> Thích
                       </button>
                       <button
                         onClick={() => setSelectedPost(post)}
@@ -383,6 +438,13 @@ const GroupPage = () => {
         <LikesList
           post={likesModalPost}
           onClose={() => setLikesModalPost(null)}
+        />
+      )}
+
+      {showAttendees && (
+        <AttendeesModal
+          attendees={attendees}
+          onClose={() => setShowAttendees(false)}
         />
       )}
 

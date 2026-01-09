@@ -7,9 +7,14 @@ export const RegistrationController = {
     try {
       const eventId = req.params.eventId;
       const userId = req.user.id;
+
+      // Fetch user to ensure we have the name (req.user from token might not have it)
+      const { User } = await import('../models/user.model.js');
+      const user = await User.findById(userId).lean();
+
       const userInfo = {
-        name: req.user.name || '',
-        email: req.user.email || ''
+        name: user?.name || req.user.name || '',
+        email: user?.email || req.user.email || ''
       };
 
       const registration = await RegistrationService.registerEvent(eventId, userId, userInfo);
@@ -185,7 +190,24 @@ export const RegistrationController = {
       console.error('RejectRegistration error:', error);
       return res.status(500).json({ error: 'INTERNAL' });
     }
-  }
+  },
+
+  // GET /api/registrations/:eventId/attendees - Public/Auth: Xem danh sách thành viên
+  async getApprovedRegistrations(req, res) {
+    try {
+      const { eventId } = req.params;
+      const attendees = await RegistrationService.getApprovedRegistrations(eventId);
+
+      return res.status(200).json({
+        success: true,
+        data: attendees,
+        total: attendees.length
+      });
+    } catch (error) {
+      console.error('GetApprovedRegistrations error:', error);
+      return res.status(500).json({ error: 'INTERNAL' });
+    }
+  },
 };
 
 export const getRegistrationStatus = async (req, res) => {

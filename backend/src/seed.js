@@ -184,12 +184,30 @@ export async function seedDatabase() {
     });
 
     events.push(event);
+
+    // Auto-register organizer as APPROVED
+    await Registration.create({
+      eventId: event._id,
+      volunteerId: organizer._id,
+      volunteerName: organizer.name,
+      volunteerEmail: organizer.email,
+      status: "APPROVED",
+      registeredAt: new Date(),
+      approvedBy: admin._id,
+    });
   }
 
   // =====================
   // 3) REGISTRATIONS
   // =====================
   const usedPairs = new Set();
+
+  // Pre-fill usedPairs with organizers
+  for (const event of events) {
+    const key = `${event._id}-${event.organizerId}`;
+    usedPairs.add(key);
+  }
+
   const shuffledEvents = [...events].sort(() => Math.random() - 0.5);
 
   for (let i = 0; i < 30; i++) {
@@ -221,6 +239,9 @@ export async function seedDatabase() {
   // =====================
   // 4) CHANNELS & POSTS
   // =====================
+  // =====================
+  // 4) CHANNELS & POSTS
+  // =====================
   for (const event of events) {
     // 1. Create Channel for every event
     const channel = await Channel.create({
@@ -229,10 +250,29 @@ export async function seedDatabase() {
       description: `Kênh thảo luận chung cho sự kiện ${event.title}`,
     });
 
+    // Find valid participants (Organizer + Approved Volunteers)
+    const approvedRegs = await Registration.find({ eventId: event._id, status: 'APPROVED' });
+    const approvedVolunteerIds = approvedRegs.map(r => r.volunteerId.toString());
+
+    // Filter users who can post/like/comment
+    const validParticipants = registrableUsers.filter(u =>
+      u._id.toString() === event.organizerId.toString() ||
+      approvedVolunteerIds.includes(u._id.toString())
+    );
+
+    // If no one approved yet (rare but possible), only organizer can post
+    if (validParticipants.length === 0) {
+      // Fallback to searching organizer in managers list if not in registrableUsers (though they should be)
+      const organizer = managers.find(m => m._id.toString() === event.organizerId.toString());
+      if (organizer) validParticipants.push(organizer);
+    }
+
+    if (validParticipants.length === 0) continue;
+
     // 2. Add some posts
     const numPosts = Math.floor(Math.random() * 5); // 0-4 posts per channel
     for (let j = 0; j < numPosts; j++) {
-      const author = randomFromArray(registrableUsers);
+      const author = randomFromArray(validParticipants);
       const post = await Post.create({
         channelId: channel._id,
         authorId: author._id,
@@ -251,9 +291,9 @@ export async function seedDatabase() {
       });
 
       // 3. Likes
-      const numLikes = Math.floor(Math.random() * 10);
+      const numLikes = Math.floor(Math.random() * 5); // Reduced max likes strictly to valid participants
       for (let k = 0; k < numLikes; k++) {
-        const liker = randomFromArray(registrableUsers);
+        const liker = randomFromArray(validParticipants);
         // Avoid duplicate likes (simplified check, might fail occasionally but ok for seed)
         try {
           await Like.create({
@@ -271,7 +311,7 @@ export async function seedDatabase() {
       // 4. Comments
       const numComments = Math.floor(Math.random() * 3);
       for (let l = 0; l < numComments; l++) {
-        const commenter = randomFromArray(registrableUsers);
+        const commenter = randomFromArray(validParticipants);
         await Comment.create({
           postId: post._id,
           authorId: commenter._id,

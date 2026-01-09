@@ -260,23 +260,22 @@ export const EventService = {
 
       try {
         // Auto-register organizer as APPROVED
-        // Use the imported Registration model if available, or fetch it
-        const Registration = mongoose.model('Registration');
-
-        await Registration.create([{
+        // Use imported Registration model
+        await Registration.create({
           eventId: createdEvent._id,
           volunteerId: organizerId,
           volunteerName: organizerName || 'Organizer',
-          volunteerEmail: organizerEmail || 'organizer@volunteerhub.com', // Use passed email
+          volunteerEmail: organizerEmail || 'organizer@volunteerhub.com',
           status: 'APPROVED',
           approvedBy: organizerId, // Self-approved
           registeredAt: new Date()
-        }]);
+        });
 
       } catch (regError) {
-        // If registration fails, delete the created event to maintain consistency
-        await Event.findByIdAndDelete(createdEvent._id);
-        throw regError;
+        console.error("Auto-registration failed (Non-fatal):", regError);
+        // Do not delete event, allow creation to proceed even if auto-reg fails
+        // await Event.findByIdAndDelete(createdEvent._id);
+        // throw regError;
       }
 
       // Ghi lịch sử cho MANAGER (organizer)

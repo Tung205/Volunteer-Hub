@@ -2,11 +2,17 @@ import mongoose from 'mongoose';
 
 const LikeSchema = new mongoose.Schema(
   {
-    postId: {
+    targetId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Post',
       required: true,
+      refPath: 'targetType',
       index: true,
+    },
+    targetType: {
+      type: String,
+      required: true,
+      enum: ['Post', 'Comment', 'Event'],
+      default: 'Post'
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -20,11 +26,11 @@ const LikeSchema = new mongoose.Schema(
   }
 );
 
-// Không cho 1 user like 1 post nhiều lần
-LikeSchema.index({ postId: 1, userId: 1 }, { unique: true });
+// Ensure unique like per user per target
+LikeSchema.index({ targetId: 1, targetType: 1, userId: 1 }, { unique: true });
 
-// Hỗ trợ query tất cả like của 1 post
-LikeSchema.index({ postId: 1 });
+// Index for counting likes
+LikeSchema.index({ targetId: 1, targetType: 1 });
 
 const Like = mongoose.model('Like', LikeSchema);
 export default Like;
